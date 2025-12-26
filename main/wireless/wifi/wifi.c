@@ -21,9 +21,7 @@ static esp_event_handler_instance_t instance_any_id;
 static esp_event_handler_instance_t instance_got_ip;
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         if (s_retry_num < WIFI_RETRY_MAX) {
             esp_wifi_connect();
             s_retry_num++;
@@ -125,6 +123,12 @@ bool wifi_start_sta(const char* ssid, const char* password) {
         ESP_LOGE(TAG, "Invalid ssid/password provided.");
         return false;
     }
+
+    // Stop AP DHCP and captive portal before switching to STA to avoid socket errors
+    if (ap_netif) {
+        esp_netif_dhcps_stop(ap_netif);
+    }
+    captive_portal_stop_dns_server();
 
     esp_wifi_stop();
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
