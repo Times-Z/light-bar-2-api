@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xiaomi Light bar for ESP Control</title>
+    <link rel="stylesheet" href="css/milligram.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Xiaomi Light bar for ESP Control</h1>
+    </header>
+
+    <main>
+      <div class="dashboard">
+        <section id="status-section" class="container">
+          <h2>System Status</h2>
+          <button id="api-status-btn">Refresh Status</button>
+          <div id="status-loader" class="loader"></div>
+          <div id="status-output" class="output-container"></div>
+        </section>
+
+        <section id="wifi-section" class="container">
+          <h2>Wi-Fi Management</h2>
+          <button id="wifi-scan-btn">Scan Wi-Fi</button>
+          <div id="wifi-loader" class="loader"></div>
+          <div id="wifi-output" class="output-container"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; <span id="current-year"></span> Xiaomi Light bar for ESP</p>
+    </footer>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>

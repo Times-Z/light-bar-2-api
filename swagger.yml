@@ -1,0 +1,107 @@
+openapi: 3.0.0
+info:
+  title: Xiaomi Light bar for ESP API
+  version: 1.0.0
+  description: REST API for interacting with the Xiaomi Light bar for ESP system.
+
+servers:
+  - url: "http://{host}/"
+    description: "API Server for version 1"
+    variables:
+      host:
+        default: "localhost"
+
+tags:
+  - name: V1
+    description: All endpoints related to Xiaomi Light bar for ESP system interaction.
+
+paths:
+  /api/v1/status:
+    get:
+      tags:
+        - V1
+      summary: Get system status
+      description: Returns system uptime, free heap memory, and IP address.
+      responses:
+        "200":
+          description: System status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  ip:
+                    type: string
+                    example: "192.168.1.123"
+                  sys_timestamp:
+                    type: integer
+                    example: "1242013890"
+                  free_heap:
+                    type: string
+                    example: "190.23 KB"
+                  uptime:
+                    type: string
+                    example: "0d 02h 25m 10s"
+
+  /api/v1/wifi/connect:
+    post:
+      tags:
+        - V1
+      summary: Connect to Wi-Fi
+      description: Attempts to connect to the given Wi-Fi SSID using the provided credentials.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ssid
+                - password
+              properties:
+                ssid:
+                  type: string
+                  example: "MyNetwork"
+                password:
+                  type: string
+                  example: "mypassword123"
+      responses:
+        "200":
+          description: Successfully connected
+        "400":
+          description: Invalid request or missing fields
+
+  /api/v1/wifi/scan:
+    get:
+      tags:
+        - V1
+      summary: Scan Wi-Fi networks
+      description: Performs a scan of available Wi-Fi networks nearby.
+      responses:
+        "200":
+          description: List of available networks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  networks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ssid:
+                          type: string
+                          example: "MyNetwork"
+                        rssi:
+                          type: integer
+                          example: -55
+                        authmode:
+                          type: string
+                          example: "WPA2_PSK"

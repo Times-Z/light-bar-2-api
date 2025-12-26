@@ -1,0 +1,151 @@
+:root {
+  --main-color: #883696;
+  --accent-color: #a55ac3;
+  --light-color: #f3e6f9;
+  --error-color: #d63e99;
+  --bg-color: #2a1e2f;
+  --text-color: #f9f6fc;
+  --container-bg: #3b193f;
+  --border-color: #a55ac3;
+  --button-hover: #6d2e86;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+header,
+footer {
+  background-color: var(--main-color);
+  color: var(--light-color);
+  text-align: center;
+  padding: 1.5rem;
+  font-size: 1.2rem;
+}
+
+footer {
+  font-size: 0.9rem;
+  position: relative;
+  bottom: 0;
+  width: 100%;
+}
+
+main {
+  flex: 1;
+  padding: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  width: 100%;
+  padding: 20px;
+  align-items: start;
+}
+
+.container {
+  background: var(--container-bg);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(136, 54, 150, 0.2);
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--container-bg);
+  color: var(--text-color);
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+button {
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s;
+  min-height: 48px;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: var(--button-hover);
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.wifi-card {
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+  background-color: var(--container-bg);
+  color: var(--text-color);
+  box-shadow: 0 4px 6px rgba(136, 54, 150, 0.2);
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.wifi-card:hover {
+  background-color: var(--button-hover);
+  transform: translateY(-3px);
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    width: 100%;
+  }
+}
+
+.loader {
+  display: none;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 1rem auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
