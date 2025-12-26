@@ -6,3 +6,4 @@
 #include <esp_netif.h>
 
 void register_api_v1_endpoints(httpd_handle_t server);
+void api_init_auth(const char* api_key);

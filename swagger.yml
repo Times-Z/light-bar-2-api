@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Xiaomi Light bar for ESP API
-  version: 1.0.0
+  version: 1.1.0
   description: REST API for interacting with the Xiaomi Light bar for ESP system.
 
 servers:
@@ -52,6 +52,8 @@ paths:
         - V1
       summary: Connect to Wi-Fi
       description: Attempts to connect to the given Wi-Fi SSID using the provided credentials.
+      security:
+        - ApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -73,6 +75,19 @@ paths:
           description: Successfully connected
         "400":
           description: Invalid request or missing fields
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
 
   /api/v1/wifi/scan:
     get:
@@ -112,6 +127,8 @@ paths:
         - V1
       summary: Set NTP server for time sync
       description: Sync time with the given NTP server
+      security:
+        - ApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -151,6 +168,19 @@ paths:
                   message:
                     type: string
                     example: "Missing or invalid NTP domain"
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
         "500":
           description: Failed to sync with the NTP server.
           content:
@@ -164,3 +194,11 @@ paths:
                   message:
                     type: string
                     example: "Failed to sync time with NTP"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key required for protected endpoints.

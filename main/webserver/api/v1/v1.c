@@ -1,4 +1,5 @@
 #include "v1.h"
+#include "helper/auth.h"
 
 esp_err_t status_handler(httpd_req_t* req) {
     uint32_t free_heap = esp_get_free_heap_size();

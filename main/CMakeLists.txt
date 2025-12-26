@@ -1,5 +1,7 @@
 file(GLOB_RECURSE SOURCES "*.c")
 
+list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/webserver/api/helper/auth.c)
+
 file(GLOB_RECURSE INCLUDE_DIRS_LIST "*.h")
 set(INCLUDE_DIRS "")
 foreach(header ${INCLUDE_DIRS_LIST})

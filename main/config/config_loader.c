@@ -56,3 +56,44 @@ bool config_load_wifi_credentials(char* ssid_out, size_t ssid_size, char* pass_o
         return false;
     }
 }
+
+/// @brief Load API key from SPIFFS config partition file /config/config.json
+/// @param api_key_out API key output buffer
+/// @param api_key_size API key output buffer size
+/// @return true if API key was successfully parsed, false otherwise
+bool config_load_api_key(char* api_key_out, size_t api_key_size) {
+    if (!api_key_out || api_key_size == 0) {
+        ESP_LOGE(TAG, "Invalid buffer for API key");
+        return false;
+    }
+
+    FILE* f = fopen(CONFIG_PATH, "r");
+    if (!f) {
+        ESP_LOGW(TAG, "Config file not found at %s", CONFIG_PATH);
+        return false;
+    }
+
+    char buf[1024];
+    size_t read_len = fread(buf, 1, sizeof(buf) - 1, f);
+    fclose(f);
+    buf[read_len] = '\0';
+
+    cJSON* root = cJSON_Parse(buf);
+    if (!root) {
+        ESP_LOGE(TAG, "Failed to parse JSON config");
+        return false;
+    }
+
+    const cJSON* api_key = cJSON_GetObjectItemCaseSensitive(root, "api_key");
+
+    if (cJSON_IsString(api_key) && (api_key->valuestring != NULL) && strlen(api_key->valuestring) > 0) {
+        strlcpy(api_key_out, api_key->valuestring, api_key_size);
+        ESP_LOGI(TAG, "Loaded API key from config.json");
+        cJSON_Delete(root);
+        return true;
+    } else {
+        ESP_LOGW(TAG, "Missing or invalid api_key in config.json");
+        cJSON_Delete(root);
+        return false;
+    }
+}

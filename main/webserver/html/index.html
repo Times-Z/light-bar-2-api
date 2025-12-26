@@ -10,6 +10,34 @@
   <body>
     <header>
       <h1>Xiaomi Light bar for ESP Control</h1>
+      <div id="api-key-controls" class="api-key-widget">
+        <label for="api-key-input">X-API-Key</label>
+        <input
+          type="password"
+          id="api-key-input"
+          class="input-sm"
+          placeholder="API key"
+        />
+        <button id="api-key-save" class="btn-sm">Save</button>
+        <button id="api-key-clear" class="button-outline btn-sm">Clear</button>
+        <span id="api-key-status"></span>
+        <button
+          id="api-key-close"
+          class="btn-sm icon-btn"
+          title="Hide"
+          aria-label="Hide API Key"
+        >
+          ×
+        </button>
+      </div>
+      <button
+        id="api-key-toggle"
+        class="api-key-toggle"
+        title="Show API Key"
+        aria-label="Show API Key"
+      >
+        🔑
+      </button>
     </header>
 
     <main>
@@ -42,7 +70,90 @@
     <footer>
       <p>&copy; <span id="current-year"></span> Xiaomi Light bar for ESP</p>
     </footer>
+    <script>
+      (function () {
+        const KEY_STORAGE = "x_api_key";
+        const getKey = () => localStorage.getItem(KEY_STORAGE) || "";
+        const setKey = (k) => localStorage.setItem(KEY_STORAGE, k || "");
+        const clearKey = () => localStorage.removeItem(KEY_STORAGE);
 
+        const origFetch = window.fetch.bind(window);
+        window.fetch = function (input, init) {
+          const key = getKey();
+          if (key) {
+            init = init || {};
+            let headers = init.headers || {};
+
+            if (headers instanceof Headers) {
+              headers = new Headers(headers);
+              headers.set("X-API-Key", key);
+              init.headers = headers;
+            } else if (Array.isArray(headers)) {
+              init.headers = headers.concat([["X-API-Key", key]]);
+            } else if (typeof headers === "object") {
+              init.headers = Object.assign({}, headers, { "X-API-Key": key });
+            } else {
+              init.headers = { "X-API-Key": key };
+            }
+          }
+          return origFetch(input, init);
+        };
+
+        document.addEventListener("DOMContentLoaded", function () {
+          const input = document.getElementById("api-key-input");
+          const saveBtn = document.getElementById("api-key-save");
+          const clearBtn = document.getElementById("api-key-clear");
+          const status = document.getElementById("api-key-status");
+          const widget = document.getElementById("api-key-controls");
+          const closeBtn = document.getElementById("api-key-close");
+          const toggleBtn = document.getElementById("api-key-toggle");
+          const COLLAPSE_STORAGE = "api_key_widget_hidden";
+
+          const refreshStatus = () => {
+            const has = !!getKey();
+            status.textContent = has ? "Key set" : "No key";
+            status.style.color = has ? "#4CAF50" : "var(--error-color)";
+          };
+
+          input.value = getKey();
+          refreshStatus();
+
+          saveBtn.addEventListener("click", function () {
+            setKey(input.value.trim());
+            refreshStatus();
+          });
+
+          clearBtn.addEventListener("click", function () {
+            clearKey();
+            input.value = "";
+            refreshStatus();
+          });
+
+          const setHidden = (hidden) => {
+            if (hidden) {
+              widget.classList.add("hidden");
+              toggleBtn.style.display = "inline-flex";
+            } else {
+              widget.classList.remove("hidden");
+              toggleBtn.style.display = "none";
+            }
+          };
+
+          let stored = localStorage.getItem(COLLAPSE_STORAGE);
+          let hidden = stored === "1" || stored === null;
+          setHidden(hidden);
+
+          closeBtn.addEventListener("click", function () {
+            setHidden(true);
+            localStorage.setItem(COLLAPSE_STORAGE, "1");
+          });
+          toggleBtn.addEventListener("click", function () {
+            setHidden(false);
+            localStorage.setItem(COLLAPSE_STORAGE, "0");
+          });
+        });
+      })();
+    </script>
     <script src="js/main.js"></script>
   </body>
 </html>
