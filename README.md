@@ -111,6 +111,7 @@ idf.py monitor
 - [x] Uptime tracking (seconds to days format)
 - [x] Lightweight JSON API for system status and configuration
 - [x] NTP sync (default => build date)
+- [x] X-API-Key based header protection for needed endpoint
 
 ## License
 
