@@ -11,7 +11,6 @@ permissions:
   pull-requests: write
 
 env:
-  ESP_IDF_VERSION: release-v5.4
   IDF_PATH: "/opt/esp/idf"
   IDF_TOOLS_PATH: "/opt/esp"
 
@@ -20,7 +19,7 @@ jobs:
     name: Build ESP32
     runs-on: ubuntu-latest
     container:
-      image: espressif/idf:${{ env.ESP_IDF_VERSION }}
+      image: espressif/idf:release-v5.4
     defaults:
       run:
         shell: bash
