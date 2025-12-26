@@ -4,6 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-extern const char *APP_NAME;
+extern const char* APP_NAME;
 
 httpd_handle_t webserver_start(void);

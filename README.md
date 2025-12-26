@@ -45,21 +45,23 @@ Before setting up the project, ensure you have the following installed:
 
 The project uses a custom partition table tailored for persistent storage, application firmware, and static assets.
 
-| Name      | Type | SubType | Offset   | Size     | Size (KB) | Description                |
-| :-------- | :--- | :------ | :------- | :------- | :-------- | :------------------------- |
-| `nvs`     | data | nvs     | 0x9000   | 0x80000  | 512 KB    | Non-volatile storage (NVS) |
-| `factory` | app  | factory | 0x90000  | 0x200000 | 2048 KB   | Main application binary    |
-| `storage` | data | spiffs  | 0x290000 | 0x170000 | 1472 KB   | SPIFFS for static assets   |
+| Name      | Type | SubType | Offset   | Size     | Size (KB) | Description                          |
+| :-------- | :--- | :------ | :------- | :------- | :-------- | :----------------------------------- |
+| `nvs`     | data | nvs     | 0x9000   | 0x80000  | 512 KB    | Non-volatile storage (NVS)           |
+| `factory` | app  | factory | 0x90000  | 0x200000 | 2048 KB   | Main application binary              |
+| `config`  | data | spiffs  | 0x290000 | 0x20000  | 128 KB    | SPIFFS for JSON configuration files  |
+| `www`     | data | spiffs  | 0x2B0000 | 0x150000 | 1344 KB   | SPIFFS for static assets (HTML, CSS) |
 
 ## Installation
 
 ### Local
 
 1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/Times-Z/light-bar-2-api.git
-   cd light-bar-2-api
-   ```
+
+```sh
+git clone https://github.com/Times-Z/light-bar-2-api.git
+cd light-bar-2-api
+```
 
 ### If your don't use devcontainer
 
@@ -70,31 +72,42 @@ The project uses a custom partition table tailored for persistent storage, appli
 
 ### Both
 
-3. **Build and flash the firmware:**
-   ```sh
-   idf.py build
-   idf.py flash
-   ```
+3. **Configure all you need in the config dir :**
+
+Configure the json with your SSID, password, api keys etc...
+
+```sh
+  cp main/config/default.json main/config/config.json
+```
+
+4. **Build and flash the firmware:**
+
+```sh
+idf.py build
+idf.py flash
+```
 
 ## Usage
 
 - Power on the ESP32
-- The device will create an access point `Lightbar2api` with password `$tr0ngWifi` to configure wifi network.
+- The device will create an access point `Lightbar2api` with password `$tr0ngWifi` to configure the Wi-Fi network (default behavior if the application is not properly configured via `config.json`)
 - Use the serial monitor for debugging:
-  ```sh
-  idf.py monitor
-  ```
+
+```sh
+idf.py monitor
+```
 
 ## API documentation
 
-[SmartClimate API Swagger](./swagger.yml)
+[Light bar 2 API Swagger](./swagger.yml)
 
 ## Features
 
 - [x] Embedded web server with HTTP endpoints
-- [x] Wi-Fi station (STA) mode support
+- [x] Wi-Fi station (STA) mode support with auto-connect from `config.json`
 - [x] Captive portal for Wi-Fi access point (AP) mode
-- [x] NVS-based persistent storage for configuration and credentials
+- [x] JSON-based configuration file (`config.json`) for boot-time settings
+- [x] NVS-based persistent storage for credentials (fallback & persistence)
 - [x] Uptime tracking (seconds to days format)
 - [x] Lightweight JSON API for system status and configuration
 - [x] NTP sync (default => build date)

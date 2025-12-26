@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "../captive_portal/captive_portal.h"
+#include "../config/config_loader.h"
 
 #define MAX_APs 20
 #define WIFI_RETRY_MAX 2
@@ -180,10 +181,16 @@ void wifi_init(void) {
 
     char ssid_local[33] = {0};
     char password_local[65] = {0};
+
     if (nvs_load_wifi_credentials(ssid_local, sizeof(ssid_local), password_local, sizeof(password_local))) {
+        ESP_LOGI(TAG, "Using Wi-Fi credentials from NVS");
+        wifi_start_sta(ssid_local, password_local);
+    } else if (config_load_wifi_credentials(ssid_local, sizeof(ssid_local), password_local, sizeof(password_local))) {
+        ESP_LOGI(TAG, "Using Wi-Fi credentials from config.json");
+        should_save_credentials = true;
         wifi_start_sta(ssid_local, password_local);
     } else {
-        ESP_LOGI(TAG, "No Wi-Fi credentials in NVS, starting AP mode");
+        ESP_LOGI(TAG, "No Wi-Fi credentials found, starting AP mode");
         wifi_start_ap();
     }
 }

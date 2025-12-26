@@ -36,3 +36,6 @@ sdkconfig.old
 # Ignore generated dependencies and configuration
 idf.py*
 *.bak
+
+# Config
+main/config/config.json

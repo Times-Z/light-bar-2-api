@@ -1,11 +1,11 @@
 #include "webserver.h"
 #include "api/api.h"
+#include "storage.h"
 #include "esp_log.h"
 #include <stdio.h>
 #include <string.h>
 
 static const char* TAG = "HTTP_SERVER";
-extern const char* SPIFFS_MOUNTPOINT;
 
 static esp_err_t serve_file(httpd_req_t* req, const char* file_path, const char* content_type) {
     FILE* file = fopen(file_path, "r");
@@ -40,7 +40,7 @@ static const char* get_content_type(const char* path) {
 
 static esp_err_t static_file_handler(httpd_req_t* req) {
     char full_path[256];
-    strlcpy(full_path, SPIFFS_MOUNTPOINT, sizeof(full_path));
+    strlcpy(full_path, WWW_MOUNTPOINT, sizeof(full_path));
 
     if (strcmp(req->uri, "/") == 0 || strcmp(req->uri, "/home") == 0 || strcmp(req->uri, "/setup") == 0) {
         strlcat(full_path, "/index.html", sizeof(full_path));

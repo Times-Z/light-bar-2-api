@@ -1,0 +1,6 @@
+{
+  "wifi_ssid": "YourWiFiSSID",
+  "wifi_password": "YourWiFiPassword",
+  "api_key": "YourSecureApiKey",
+  "ntp_server": ""
+}
