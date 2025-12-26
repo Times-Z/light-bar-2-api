@@ -1,0 +1,50 @@
+name: ESP-IDF Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build ESP32-C6
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.4
+    env:
+      IDF_PATH: "/opt/esp/idf"
+      IDF_TOOLS_PATH: "/opt/esp"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.espressif
+            build/
+            .idf_cache/
+          key: esp-idf-cache-${{ runner.os }}
+
+      - name: Set up ESP-IDF
+        run: |
+          source $IDF_PATH/export.sh
+          idf.py reconfigure
+
+      - name: Build firmware
+        run: |
+          source $IDF_PATH/export.sh
+          idf.py build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: build/*.bin

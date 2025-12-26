@@ -1,0 +1,55 @@
+stages:
+  - build
+  - test
+  - deploy
+
+build:esp32c6:
+  stage: build
+  image: espressif/idf:release-v5.4
+  variables:
+    IDF_PATH: "/opt/esp/idf"
+    IDF_TOOLS_PATH: "/opt/esp"
+  script:
+    - source $IDF_PATH/export.sh
+    - idf.py reconfigure
+    - idf.py build
+  cache:
+    key: esp-idf-cache
+    paths:
+      - ~/.espressif
+      - build/
+      - .idf_cache/
+    policy: pull-push
+  artifacts:
+    paths:
+      - build/*.bin
+      - build/*.elf
+      - build/*.map
+    expire_in: 1 days
+
+deploy:github:
+  stage: deploy
+  image: debian:12
+  before_script:
+    - apt-get update && apt-get install git ssh -y
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )"
+    - mkdir -p  ~/.ssh
+    - |
+      echo ${GITHUB_SSH_PRIVATE} | base64 -d > ~/.ssh/id_rsa
+      echo ${GITHUB_SSH_PUBLIC} | base64 -d > ~/.ssh/id_rsa.pub
+      chmod 600 -R ~/.ssh
+      eval $(ssh-agent -s)
+      ssh-add ~/.ssh/id_rsa
+      ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+  script:
+    - |
+      if [ "$(git remote show | grep publicGithub)" == "" ] ; then
+        git remote add publicGithub git@github.com:Times-Z/light-bar-2-api.git
+      fi
+      git push -f -u publicGithub HEAD:main
+  needs:
+    - job: build:esp32c6
+      artifacts: false
+  only:
+    - main
+  when: always
