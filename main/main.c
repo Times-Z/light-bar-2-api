@@ -7,6 +7,7 @@
 #include "wireless.h"
 #include "log.h"
 #include "webserver.h"
+#include "time_sync.h"
 
 static const char* TAG = "MAIN";
 const char* APP_NAME;
@@ -32,6 +33,7 @@ void initialize_components(void) {
         esp_restart();
     }
 
+    time_init();
     webserver_start();
 }
 
@@ -41,8 +43,4 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "Starting %s version %s...", APP_NAME, APP_VERSION);
     initialize_components();
-
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
 }
