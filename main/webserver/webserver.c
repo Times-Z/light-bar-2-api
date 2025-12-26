@@ -53,7 +53,7 @@ static esp_err_t static_file_handler(httpd_req_t* req) {
 }
 
 static esp_err_t connectivity_check(httpd_req_t* req) {
-    httpd_resp_set_hdr(req, "Location", "http://Xiaomi Light bar for ESP/index.html");
+    httpd_resp_set_hdr(req, "Location", "http://lightbar2api/index.html");
     httpd_resp_set_status(req, "301 Moved Permanently");
     esp_err_t status = httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
     return status;
