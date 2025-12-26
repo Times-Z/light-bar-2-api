@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const wifiOutput = document.getElementById("wifi-output");
   const statusLoader = document.getElementById("status-loader");
   const wifiLoader = document.getElementById("wifi-loader");
+  const ntpInput = document.getElementById("ntp-input");
+  const ntpOutput = document.getElementById("ntp-output");
+  const ntpLoader = document.getElementById("ntp-loader");
+  const ntpSetBtn = document.getElementById("ntp-set-btn");
 
   const showLoader = (loader) => {
     loader.style.display = "block";
@@ -104,6 +108,38 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   };
 
+  const handleNtpUpdate = () => {
+    const ntpDomain = ntpInput.value.trim();
+    if (!ntpDomain) {
+      ntpOutput.innerHTML = `<p style="color: var(--error-color);">Please enter an NTP server domain.</p>`;
+      return;
+    }
+
+    disableButton(ntpSetBtn);
+    showLoader(ntpLoader);
+    ntpOutput.innerHTML = "";
+
+    fetch("/api/v1/ntp/set", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ntp_domain: ntpDomain }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data || data.success === false) {
+          throw new Error(data.message || "Unknown error");
+        }
+        ntpOutput.innerHTML = `<p style="color: #4CAF50;">NTP server updated successfully to <strong>${ntpDomain}</strong></p>`;
+      })
+      .catch((err) => {
+        ntpOutput.innerHTML = `<p style="color: var(--error-color);">${err.message}</p>`;
+      })
+      .finally(() => {
+        hideLoader(ntpLoader);
+        enableButton(ntpSetBtn, "Set NTP Server");
+      });
+  };
+
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("connect-btn")) {
       const ssid = decodeURIComponent(e.target.dataset.ssid);
@@ -156,4 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wifiBtn,
       wifiLoader
     );
+
+  ntpSetBtn.dataset.originalText = ntpSetBtn.innerText;
+  ntpSetBtn.onclick = handleNtpUpdate;
 });

@@ -36,6 +36,12 @@ void register_api_v1_endpoints(httpd_handle_t server) {
         .handler = wifi_connect_handler,
         .user_ctx = NULL,
     };
+    httpd_uri_t ntp_sync_uri = {
+        .uri = "/api/v1/ntp/set",
+        .method = HTTP_POST,
+        .handler = ntp_set_handler,
+        .user_ctx = NULL,
+    };
 
     httpd_uri_t preflight_uri = {
         .uri = "/api/v1/*",
@@ -48,5 +54,6 @@ void register_api_v1_endpoints(httpd_handle_t server) {
     httpd_register_uri_handler(server, &status_uri);
     httpd_register_uri_handler(server, &wifi_scan_uri);
     httpd_register_uri_handler(server, &wifi_connect_uri);
+    httpd_register_uri_handler(server, &ntp_sync_uri);
     httpd_register_uri_handler(server, &preflight_uri);
 }

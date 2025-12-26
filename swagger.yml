@@ -105,3 +105,62 @@ paths:
                         authmode:
                           type: string
                           example: "WPA2_PSK"
+
+  /api/v1/ntp/set:
+    post:
+      tags:
+        - V1
+      summary: Set NTP server for time sync
+      description: Sync time with the given NTP server
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ntp_domain
+              properties:
+                ntp_domain:
+                  type: string
+                  example: "pool.ntp.org"
+      responses:
+        "200":
+          description: Time successfully synchronized with the NTP server.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "NTPS sync ok"
+        "400":
+          description: Bad request (Invalid JSON or missing `ntp_domain`).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Missing or invalid NTP domain"
+        "500":
+          description: Failed to sync with the NTP server.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Failed to sync time with NTP"
