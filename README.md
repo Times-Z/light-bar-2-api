@@ -2,7 +2,20 @@
 
 **Light bar 2 API** is a firmware solution that makes the Xiaomi Light Bar smart and connected through a RESTful API. Built on ESP32, it provides wireless control capabilities for your Xiaomi Light Bar via HTTP endpoints.
 
-<!-- screen later -->
+<div align="center">
+
+  <br/>
+  <br/>
+
+<a href="https://github.com/Times-Z/light-bar-2-api"><img src="https://img.shields.io/github/v/release/Times-Z/light-bar-2-api?label=Latest%20Version&color=c56a90&style=for-the-badge&logo=star)" alt="Latest Version" /></a>
+<a href="https://github.com/Times-Z/light-bar-2-api"><img src="https://img.shields.io/github/actions/workflow/status/Times-Z/light-bar-2-api/.github/workflows/build.yml?branch=main&label=Pipeline%20Status&color=c56a90&style=for-the-badge&logo=star" alt="Latest Version" /></a>
+
+  <br/>
+  <br/>
+
+</div>
+
+<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/01_login.gif" alt="gif_login" /></a>
 
 ## Prerequisites
 
@@ -39,6 +52,8 @@ The project uses a custom partition table tailored for persistent storage, appli
 | `storage` | data | spiffs  | 0x290000 | 0x170000 | 1472 KB   | SPIFFS for static assets   |
 
 ## Installation
+
+### Local
 
 1. **Clone the repository:**
    ```sh
@@ -82,6 +97,7 @@ The project uses a custom partition table tailored for persistent storage, appli
 - [x] NVS-based persistent storage for configuration and credentials
 - [x] Uptime tracking (seconds to days format)
 - [x] Lightweight JSON API for system status and configuration
+- [x] NTP sync (default => build date)
 
 ## License
 
