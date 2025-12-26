@@ -3,7 +3,7 @@ stages:
   - test
   - deploy
 
-build:esp32c6:
+build:esp32:
   stage: build
   image: espressif/idf:release-v5.4
   variables:
@@ -48,7 +48,7 @@ deploy:github:
       fi
       git push -f -u publicGithub HEAD:main
   needs:
-    - job: build:esp32c6
+    - job: build:esp32
       artifacts: false
   only:
     - main

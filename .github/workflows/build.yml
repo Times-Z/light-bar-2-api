@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build ESP32-C6
+    name: Build ESP32
     runs-on: ubuntu-latest
     container:
       image: espressif/idf:release-v5.4
