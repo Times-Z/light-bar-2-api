@@ -5,7 +5,7 @@ stages:
 
 build:esp32:
   stage: build
-  image: espressif/idf:release-v5.4
+  image: espressif/idf:release-v5.5
   variables:
     IDF_PATH: "/opt/esp/idf"
     IDF_TOOLS_PATH: "/opt/esp"
