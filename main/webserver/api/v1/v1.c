@@ -26,12 +26,16 @@ esp_err_t status_handler(httpd_req_t* req) {
     time_t now;
     time(&now);
 
+    esp_err_t nrf24_status = nrf24_check_connection();
+    int nrf24_connected = (nrf24_status == ESP_OK) ? 1 : 0;
+
     json_entry_t entries[] = {{"status", JSON_TYPE_STRING, "ok"},
                               {"sys_timestamp", JSON_TYPE_NUMBER, &now},
                               {"ip", JSON_TYPE_STRING, wifi_get_current_ip_str()},
                               {"main_dns", JSON_TYPE_STRING, wifi_get_current_dns_str()},
                               {"free_heap", JSON_TYPE_STRING, free_heap_str},
-                              {"uptime", JSON_TYPE_STRING, uptime_str}};
+                              {"uptime", JSON_TYPE_STRING, uptime_str},
+                              {"nrf24_antenna", JSON_TYPE_BOOL, &nrf24_connected}};
 
     char* json_response = build_json_safe(JSON_ARRAY_SIZE(entries), entries);
 

@@ -69,6 +69,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const formatStatus = (data) => {
     const date = new Date(data.sys_timestamp * 1000);
     const formattedDate = date.toLocaleString();
+    const antennaStatus = data.nrf24_antenna ? "Connected" : "Disconnected";
+    const antennaColor = data.nrf24_antenna
+      ? "var(--success-color)"
+      : "var(--error-color)";
 
     return `
       <ul>
@@ -78,6 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <li><strong>Main DNS :</strong> ${data.main_dns}</li>
         <li><strong>Uptime:</strong> ${data.uptime}</li>
         <li><strong>Free Heap:</strong> ${data.free_heap}</li>
+        <li><strong>NRF24 Antenna:</strong> <span style="color: ${antennaColor};">${antennaStatus}</span></li>
       </ul>
     `;
   };
