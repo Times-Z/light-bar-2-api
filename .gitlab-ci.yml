@@ -10,9 +10,10 @@ build:esp32:
     IDF_PATH: "/opt/esp/idf"
   script:
     - . $IDF_PATH/export.sh
+    - idf.py fullclean
     - idf.py build
   cache:
-    key: esp-idf-cache
+    key: esp-idf-v5.5-cache
     paths:
       - build/
     policy: pull-push
