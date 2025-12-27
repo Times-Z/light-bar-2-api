@@ -1,2 +1,2 @@
 dependencies:
-  idf: '>=4.4'
+  idf: ">=5.5"

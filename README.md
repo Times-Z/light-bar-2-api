@@ -1,10 +1,8 @@
-# Light bar 2 api
+# Light bar 2 API
 
 **Light bar 2 API** is a firmware solution that makes the Xiaomi Light Bar smart and connected through a RESTful API. Built on ESP32, it provides wireless control capabilities for your Xiaomi Light Bar via HTTP endpoints.
 
 <div align="center">
-
-  <br/>
   <br/>
 
 <a href="https://github.com/Times-Z/light-bar-2-api"><img src="https://img.shields.io/github/v/release/Times-Z/light-bar-2-api?label=Latest%20Version&color=c56a90&style=for-the-badge&logo=star)" alt="Latest Version" /></a>
@@ -13,9 +11,15 @@
   <br/>
   <br/>
 
+<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/01_login.gif" alt="gif_login" /></a>
+
 </div>
 
-<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/01_login.gif" alt="gif_login" /></a>
+## Acknowledgements
+
+This project is based on the reverse engineering work by [Lamperez](https://github.com/lamperez/xiaomi-lightbar-nrf24) and [Benallen](https://github.com/benallen-dev/xiaomi-lightbar).
+
+Thanks for your works!
 
 ## Prerequisites
 
@@ -23,11 +27,12 @@ Before setting up the project, ensure you have the following installed:
 
 ### Software Requirements
 
-- **Python 3** + `pip`
+- **Python 3** + **pip**
 - **VS Code** with the following extensions:
   - [C/C++](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
-  - [ESP-IDF (5.4)](https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension)
-- _Optional_ **Docker/docker-compose** for running the devcontainer to avoid installing esp-idf on host
+  - [ESP-IDF](https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension)
+- [ESP-IDF framework 5.5](https://docs.espressif.com/projects/esp-idf/en/v5.5.2/esp32/get-started/index.html)
+- **Optional**: **Docker/docker-compose** for running the devcontainer to avoid installing esp-idf on host
 
 ### Hardware Requirements
 
@@ -35,7 +40,7 @@ Before setting up the project, ensure you have the following installed:
 - **NRF24L01** module transceiver
 - **Mi Computer Monitor Light Bar**, model **MJGJD01YL** (without BLE/WiFi), the MJGJD02YL will not work
 
-### Tested hardware
+### Tested Hardware
 
 - [Mi Computer Monitor Light Bar](https://www.mi.com/fr/product/mi-computer-monitor-light-bar/)
 - [ESP-32S ESP-WROOM-32E](https://fr.aliexpress.com/item/1005004275519535.html)
@@ -54,33 +59,27 @@ The project uses a custom partition table tailored for persistent storage, appli
 
 ## Installation
 
-### Local
-
-1. **Clone the repository:**
+### 1. Clone the repository
 
 ```sh
 git clone https://github.com/Times-Z/light-bar-2-api.git
 cd light-bar-2-api
 ```
 
-### If your don't use devcontainer
+### 2. Configure ESP-IDF (if you don't use devcontainer)
 
-**Configure ESP-IDF:**
+- Open VS Code and install the ESP-IDF extension
+- Follow the setup instructions to configure the ESP32 environment
 
-- Open VS Code and install the ESP-IDF extension.
-- Follow the setup instructions to configure the ESP32 environment.
-
-### Both
-
-3. **Configure all you need in the config dir :**
+### 3. Configure all you need in the config dir
 
 Configure the json with your SSID, password, api keys etc...
 
 ```sh
-  cp main/config/default.json main/config/config.json
+cp main/config/default.json main/config/config.json
 ```
 
-4. **Build and flash the firmware:**
+### 4. Build and flash the firmware
 
 ```sh
 idf.py build
@@ -89,15 +88,15 @@ idf.py flash
 
 ## Usage
 
-- Power on the ESP32
-- The device will create an access point `Lightbar2api` with password `$tr0ngWifi` to configure the Wi-Fi network (default behavior if the application is not properly configured via `config.json`)
-- Use the serial monitor for debugging:
+1. Power on the ESP32
+2. The device will create an access point `Lightbar2api` with password `$tr0ngWifi` to configure the Wi-Fi network (default behavior if the application is not properly configured via `config.json` or the wifi configured insn't available)
+3. Use the serial monitor for debugging:
 
 ```sh
 idf.py monitor
 ```
 
-## API documentation
+## API Documentation
 
 [Light bar 2 API Swagger](./swagger.yml)
 
