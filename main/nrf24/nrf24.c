@@ -457,7 +457,7 @@ esp_err_t nrf24_scan_xiaomi(uint32_t duration_ms) {
 
     vTaskDelay(pdMS_TO_TICKS(5));
 
-    static const uint8_t channels[] = {5, 6, 7, 8, 14, 15, 16, 17, 42, 43, 44, 45, 67, 68, 69, 70};
+    static const uint8_t channels[] = {6, 15, 43, 68};
     uint32_t start_ms = esp_log_timestamp();
 
     for (;;) {
@@ -478,6 +478,8 @@ esp_err_t nrf24_scan_xiaomi(uint32_t duration_ms) {
                 gpio_set_level(PIN_NUM_CE, 0);
                 continue;
             }
+
+            ESP_LOGI(TAG, "Data detected on channel %u (status=0x%02X)", channels[c], status);
 
             uint8_t fifo = 0;
             xiaomi_packet_t pkt;
