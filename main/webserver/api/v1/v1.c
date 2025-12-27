@@ -2,6 +2,7 @@
 #include "helper/auth.h"
 #include "log_buffer.h"
 #include "nrf24.h"
+#include "nvs.h"
 
 esp_err_t status_handler(httpd_req_t* req) {
     uint32_t free_heap = esp_get_free_heap_size();
@@ -394,14 +395,99 @@ esp_err_t nrf24_scan_handler(httpd_req_t* req) {
 
     int success_val = (err == ESP_OK && result->id_found) ? 1 : 0;
     char remote_id_hex[16];
-    json_entry_t response_json[2];
-    response_json[0] = (json_entry_t){"success", JSON_TYPE_BOOL, &success_val};
-    if (success_val) {
-        snprintf(remote_id_hex, sizeof(remote_id_hex), "0x%06lX", (unsigned long)result->remote_id);
-        response_json[1] = (json_entry_t){"xiaomi_remote_id", JSON_TYPE_STRING, remote_id_hex};
-    } else {
-        response_json[1] = (json_entry_t){"xiaomi_remote_id", JSON_TYPE_RAW, "null"};
+
+    snprintf(remote_id_hex, sizeof(remote_id_hex), "0x%06lX", (unsigned long)result->remote_id);
+
+    bool saved = nvs_save_xiaomi_id(remote_id_hex);
+
+    json_entry_t response_json[] = {{"success", JSON_TYPE_BOOL, &(int){success_val ? 1 : 0}},
+                                    {"xiaomi_remote_id", JSON_TYPE_STRING, remote_id_hex},
+                                    {"xiaomi_id_saved", JSON_TYPE_BOOL, &(int){saved ? 1 : 0}}};
+
+    char* json_response = build_json_safe(JSON_ARRAY_SIZE(response_json), response_json);
+    esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+    free(json_response);
+    return res;
+}
+
+esp_err_t xiaomi_set_id_handler(httpd_req_t* req) {
+    char buf[256];
+    int ret = httpd_req_recv(req, buf, sizeof(buf) - 1);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    if (ret <= 0) {
+        json_entry_t json[] = {
+            {"success", JSON_TYPE_BOOL, &(int){0}},
+            {"message", JSON_TYPE_STRING, "No body received"},
+        };
+
+        char* json_response = build_json_safe(JSON_ARRAY_SIZE(json), json);
+        esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+        free(json_response);
+        return res;
     }
+
+    buf[ret] = '\0';
+    char xiaomi_id[33] = {0};
+
+    char* xiaomi_id_ptr = strstr(buf, "\"xiaomi_remote_id\"");
+
+    if (xiaomi_id_ptr) {
+        xiaomi_id_ptr = strchr(xiaomi_id_ptr, ':');
+        if (xiaomi_id_ptr) {
+            xiaomi_id_ptr = strchr(xiaomi_id_ptr, '"');
+            if (xiaomi_id_ptr) {
+                xiaomi_id_ptr++;
+                sscanf(xiaomi_id_ptr, "%32[^\"]", xiaomi_id);
+            }
+        }
+    }
+
+    if (strlen(xiaomi_id) == 0) {
+        json_entry_t error_json[] = {
+            {"success", JSON_TYPE_BOOL, &(int){0}},
+            {"message", JSON_TYPE_STRING, "Missing or invalid xiaomi_id parameter"},
+        };
+
+        char* json_response = build_json_safe(JSON_ARRAY_SIZE(error_json), error_json);
+        esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+        free(json_response);
+        return res;
+    }
+
+    if (!nvs_save_xiaomi_id(xiaomi_id)) {
+        json_entry_t json[] = {
+            {"success", JSON_TYPE_BOOL, &(int){0}},
+            {"message", JSON_TYPE_STRING, "Failed to save Xiaomi ID to NVS"},
+        };
+
+        char* json_response = build_json_safe(JSON_ARRAY_SIZE(json), json);
+        esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+        free(json_response);
+        return res;
+    }
+
+    json_entry_t success_json[] = {{"success", JSON_TYPE_BOOL, &(int){1}},
+                                   {"message", JSON_TYPE_STRING, "Xiaomi ID saved successfully"},
+                                   {"xiaomi_id", JSON_TYPE_STRING, xiaomi_id}};
+
+    char* json_response = build_json_safe(JSON_ARRAY_SIZE(success_json), success_json);
+    esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+    free(json_response);
+    return res;
+}
+
+esp_err_t xiaomi_get_id_handler(httpd_req_t* req) {
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    char xiaomi_id[33] = {0};
+    bool loaded = nvs_load_xiaomi_id(xiaomi_id, sizeof(xiaomi_id));
+
+    json_entry_t response_json[] = {{"success", JSON_TYPE_BOOL, &(int){loaded ? 1 : 0}},
+                                    {"xiaomi_id", JSON_TYPE_STRING, xiaomi_id}};
 
     char* json_response = build_json_safe(JSON_ARRAY_SIZE(response_json), response_json);
     esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);

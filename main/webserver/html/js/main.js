@@ -209,15 +209,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!data.success || !data.xiaomi_remote_id) {
       return `<p style="color: var(--error-color);">Remote ID not detected. Try pressing buttons on your remote during the scan.</p>`;
     }
+
+    const saveStatus =
+      data.xiaomi_id_saved !== false
+        ? `<p style="font-size: 12px; color: var(--success-color); margin-top: 15px;">The ID was saved to the device configuration.</p>`
+        : `<p style="font-size: 12px; color: var(--error-color); margin-top: 15px;">Warning: Failed to save ID to NVS memory. The ID was detected but not persisted.</p>`;
+
     return `
       <div class="nrf24-result" style="padding: 20px; background: var(--container-bg); border: 2px solid var(--border-color); border-radius: 10px; margin-top: 10px; box-shadow: 0 4px 8px rgba(136, 54, 150, 0.2);">
         <h3 style="color: var(--accent-color); margin-top: 0;">Remote ID Detected</h3>
         <div style="font-size: 28px; font-weight: bold; color: var(--text-color); font-family: monospace; margin: 20px 0; padding: 15px; background: rgba(165, 90, 195, 0.15); border-radius: 8px; border-left: 4px solid var(--accent-color);">
           ${data.xiaomi_remote_id}
         </div>
-        <p style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-top: 15px;">
-          The ID was saved to the device configuration.
-        </p>
+        ${saveStatus}
       </div>
     `;
   };

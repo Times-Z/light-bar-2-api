@@ -307,6 +307,101 @@ paths:
                     type: string
                     description: The detected remote control ID in hexadecimal format (null if not detected)
                     example: "0x700000"
+                  xiaomi_id_saved:
+                    type: boolean
+                    description: Indicates if the detected ID was successfully persisted to NVS
+                    example: true
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+
+  /api/v1/xiaomi/set-id:
+    post:
+      tags:
+        - V1
+      summary: Manually set the Xiaomi remote ID
+      description: Persists a provided Xiaomi remote ID into NVS storage.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - xiaomi_remote_id
+              properties:
+                xiaomi_remote_id:
+                  type: string
+                  description: Xiaomi remote control ID in hexadecimal format
+                  example: "0x700000"
+      responses:
+        "200":
+          description: Xiaomi ID saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Xiaomi ID saved successfully"
+                  xiaomi_id:
+                    type: string
+                    example: "0x700000"
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+
+  /api/v1/xiaomi/get-id:
+    get:
+      tags:
+        - V1
+      summary: Retrieve the stored Xiaomi remote ID
+      description: Reads the Xiaomi remote ID persisted in NVS storage and returns it if present.
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Xiaomi ID read result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Return the NVS stored remote ID
+                    example: true
+                  xiaomi_id:
+                    type: string
+                    nullable: true
+                    description: Stored Xiaomi remote ID, or null if not set
+                    example: "0x700000"
         "401":
           description: Unauthorized (missing or invalid X-API-Key)
           content:

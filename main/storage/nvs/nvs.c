@@ -1,6 +1,6 @@
 #include "nvs.h"
 
-static const char *TAG = "NVS";
+static const char* TAG = "NVS";
 
 /// @brief  Initialize the NVS flash memory (non volatile storage)
 /// @param void
@@ -52,7 +52,7 @@ void check_nvs_space() {
 /// @param ssid wifi ssid
 /// @param password wifi password
 /// @return bool true if saved, false otherwise
-bool nvs_save_wifi_credentials(const char *ssid, const char *password) {
+bool nvs_save_wifi_credentials(const char* ssid, const char* password) {
     nvs_handle_t handle;
     esp_err_t err = nvs_open("wifi", NVS_READWRITE, &handle);
     if (err != ESP_OK) return false;
@@ -70,7 +70,7 @@ bool nvs_save_wifi_credentials(const char *ssid, const char *password) {
 /// @param pass_out Pointer to the buffer where the password will be stored
 /// @param pass_size Size of the password buffer (should be at least 65 bytes)
 /// @return bool true if both SSID and password are successfully retrieved, false otherwise
-bool nvs_load_wifi_credentials(char *ssid_out, size_t ssid_size, char *pass_out, size_t pass_size) {
+bool nvs_load_wifi_credentials(char* ssid_out, size_t ssid_size, char* pass_out, size_t pass_size) {
     nvs_handle_t handle;
     esp_err_t err = nvs_open("wifi", NVS_READONLY, &handle);
     if (err != ESP_OK) return false;
@@ -112,7 +112,7 @@ bool nvs_clear_wifi_credentials(void) {
 /// @brief save ntp domain
 /// @param char ntp_domain the ntp domain
 /// @return bool true if saved, false otherwise
-bool nvs_save_ntp_information(const char *ntp_domain) {
+bool nvs_save_ntp_information(const char* ntp_domain) {
     nvs_handle_t handle;
     esp_err_t err = nvs_open("ntp", NVS_READWRITE, &handle);
     if (err != ESP_OK) return false;
@@ -127,12 +127,40 @@ bool nvs_save_ntp_information(const char *ntp_domain) {
 /// @param domain_out Pointer to the buffer where the domain will be stored
 /// @param domain_size pointer size
 /// @return bool true if ntp domain can be received, false otherwhise
-bool nvs_load_ntp_information(char *domain_out, size_t domain_size) {
+bool nvs_load_ntp_information(char* domain_out, size_t domain_size) {
     nvs_handle_t handle;
     esp_err_t err = nvs_open("ntp", NVS_READONLY, &handle);
     if (err != ESP_OK) return false;
 
     err |= nvs_get_str(handle, "domain", domain_out, &domain_size);
+    nvs_close(handle);
+    return err == ESP_OK;
+}
+
+/// @brief save xiaomi device id
+/// @param xiaomi_id the xiaomi device id
+/// @return bool true if saved, false otherwise
+bool nvs_save_xiaomi_id(const char* xiaomi_id) {
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open("xiaomi", NVS_READWRITE, &handle);
+    if (err != ESP_OK) return false;
+
+    err |= nvs_set_str(handle, "device_id", xiaomi_id);
+    err |= nvs_commit(handle);
+    nvs_close(handle);
+    return err == ESP_OK;
+}
+
+/// @brief Load xiaomi device id from NVS
+/// @param id_out Pointer to the buffer where the id will be stored
+/// @param id_size pointer size
+/// @return bool true if xiaomi id can be received, false otherwise
+bool nvs_load_xiaomi_id(char* id_out, size_t id_size) {
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open("xiaomi", NVS_READONLY, &handle);
+    if (err != ESP_OK) return false;
+
+    err |= nvs_get_str(handle, "device_id", id_out, &id_size);
     nvs_close(handle);
     return err == ESP_OK;
 }

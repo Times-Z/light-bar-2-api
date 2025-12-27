@@ -127,7 +127,7 @@ idf.py monitor
 - [x] X-API-Key based header protection for needed endpoint
 - [x] Scan and get the Xiaomi remote ID
 - [x] Show ESP32 logs from web UI
-- [] Store the Xiaomi remote ID in the NVS storage
+- [x] Store the Xiaomi remote ID in the NVS storage
 - [] Send commands to the bar
 
 ## License
