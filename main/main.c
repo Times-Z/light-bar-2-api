@@ -2,27 +2,28 @@
 #include <esp_system.h>
 #include <esp_sleep.h>
 #include <esp_app_desc.h>
+#include <esp_err.h>
 
 #include "storage.h"
 #include "wireless.h"
 #include "webserver.h"
 #include "time_sync.h"
 #include "log_hook.h"
+#include "nrf24/nrf24.h"
 
 static const char* TAG = "MAIN";
 const char* APP_NAME;
 const char* APP_VERSION;
 
-#define PIN_NUM_MISO 19
-#define PIN_NUM_MOSI 23
-#define PIN_NUM_CLK 18
-#define PIN_NUM_CS 5
-#define PIN_NUM_CE 4
-
 void initialize_components(void) {
     ESP_LOGI(TAG, "Initializing system components...");
 
     log_hook_init();
+
+    esp_err_t nrf_err = nrf24_check_connection();
+    if (nrf_err != ESP_OK) {
+        ESP_LOGW(TAG, "NRF24 check failed: %d", nrf_err);
+    }
 
     esp_err_t err = esp_event_loop_create_default();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {

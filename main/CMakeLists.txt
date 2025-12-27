@@ -3,6 +3,7 @@ file(GLOB_RECURSE SOURCES "*.c")
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/webserver/api/helper/auth.c)
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/log/log_buffer.c)
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/log/log_hook.c)
+list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/nrf24/nrf24.c)
 
 file(GLOB_RECURSE INCLUDE_DIRS_LIST "*.h")
 set(INCLUDE_DIRS "")
@@ -11,6 +12,7 @@ foreach(header ${INCLUDE_DIRS_LIST})
     list(APPEND INCLUDE_DIRS ${dir})
 endforeach()
 list(REMOVE_DUPLICATES INCLUDE_DIRS)
+list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/nrf24)
 
 idf_component_register(
     SRCS ${SOURCES}

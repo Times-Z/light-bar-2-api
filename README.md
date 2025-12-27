@@ -40,6 +40,18 @@ Before setting up the project, ensure you have the following installed:
 - **NRF24L01** module transceiver
 - **Mi Computer Monitor Light Bar**, model **MJGJD01YL** (without BLE/WiFi), the MJGJD02YL will not work
 
+#### Pinout
+
+| nRF24     |  ESP32 |
+| :-------- | -----: |
+| VCC       |    3V3 |
+| GND       |    GND |
+| CE        |  Pin 4 |
+| CSN       |  Pin 5 |
+| SCK       | Pin 18 |
+| MOSI (MO) | Pin 23 |
+| MISO (M1) | Pin 19 |
+
 ### Tested Hardware
 
 - [Mi Computer Monitor Light Bar](https://www.mi.com/fr/product/mi-computer-monitor-light-bar/)
