@@ -53,6 +53,8 @@ void register_api_v1_endpoints(httpd_handle_t server) {
     static const api_handler_ctx_t ctx_wifi_scan = {.handler = wifi_scan_handler, .require_auth = true};
     static const api_handler_ctx_t ctx_wifi_connect = {.handler = wifi_connect_handler, .require_auth = true};
     static const api_handler_ctx_t ctx_ntp_sync = {.handler = ntp_set_handler, .require_auth = true};
+    static const api_handler_ctx_t ctx_logs = {.handler = logs_handler, .require_auth = true};
+    static const api_handler_ctx_t ctx_logs_clear = {.handler = logs_clear_handler, .require_auth = true};
 
     httpd_uri_t status_uri = {
         .uri = "/api/v1/status",
@@ -78,6 +80,18 @@ void register_api_v1_endpoints(httpd_handle_t server) {
         .handler = api_dispatch,
         .user_ctx = (void*)&ctx_ntp_sync,
     };
+    httpd_uri_t logs_uri = {
+        .uri = "/api/v1/logs",
+        .method = HTTP_GET,
+        .handler = api_dispatch,
+        .user_ctx = (void*)&ctx_logs,
+    };
+    httpd_uri_t logs_clear_uri = {
+        .uri = "/api/v1/logs/clear",
+        .method = HTTP_DELETE,
+        .handler = api_dispatch,
+        .user_ctx = (void*)&ctx_logs_clear,
+    };
 
     httpd_uri_t preflight_uri = {
         .uri = "/api/v1/*",
@@ -91,5 +105,7 @@ void register_api_v1_endpoints(httpd_handle_t server) {
     httpd_register_uri_handler(server, &wifi_scan_uri);
     httpd_register_uri_handler(server, &wifi_connect_uri);
     httpd_register_uri_handler(server, &ntp_sync_uri);
+    httpd_register_uri_handler(server, &logs_uri);
+    httpd_register_uri_handler(server, &logs_clear_uri);
     httpd_register_uri_handler(server, &preflight_uri);
 }

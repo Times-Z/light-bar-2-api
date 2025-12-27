@@ -195,6 +195,86 @@ paths:
                     type: string
                     example: "Failed to sync time with NTP"
 
+  /api/v1/logs:
+    get:
+      tags:
+        - V1
+      summary: Get ESP32 logs
+      description: Returns the captured logs from the ESP32 as an array of log lines (same as idf.py monitor output).
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Successfully retrieved logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  log_lines:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "I (12345) MAIN: Starting application..."
+                      - "I (12346) HTTP_SERVER: Webserver starting on port: 80"
+                      - "I (12347) WIFI: Initializing WiFi..."
+                  total_lines:
+                    type: integer
+                    example: 3
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+
+  /api/v1/logs/clear:
+    delete:
+      tags:
+        - V1
+      summary: Clear ESP32 logs
+      description: Clears the log buffer, removing all captured logs.
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Logs successfully cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Logs cleared"
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+
 components:
   securitySchemes:
     ApiKeyAuth:

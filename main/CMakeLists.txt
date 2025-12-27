@@ -1,6 +1,8 @@
 file(GLOB_RECURSE SOURCES "*.c")
 
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/webserver/api/helper/auth.c)
+list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/log/log_buffer.c)
+list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/log/log_hook.c)
 
 file(GLOB_RECURSE INCLUDE_DIRS_LIST "*.h")
 set(INCLUDE_DIRS "")

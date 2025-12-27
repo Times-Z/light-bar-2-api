@@ -1,5 +1,6 @@
 #include "v1.h"
 #include "helper/auth.h"
+#include "log_buffer.h"
 
 esp_err_t status_handler(httpd_req_t* req) {
     uint32_t free_heap = esp_get_free_heap_size();
@@ -245,4 +246,120 @@ esp_err_t ntp_set_handler(httpd_req_t* req) {
     esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
     free(json_response);
     return res;
+}
+
+esp_err_t logs_handler(httpd_req_t* req) {
+    char* logs = (char*)malloc(16384);
+    if (logs == NULL) {
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+        json_entry_t error_json[] = {
+            {"success", JSON_TYPE_BOOL, &(int){0}},
+            {"message", JSON_TYPE_STRING, "Memory allocation failed"},
+        };
+
+        char* json_response = build_json_safe(JSON_ARRAY_SIZE(error_json), error_json);
+        esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+        free(json_response);
+        return res;
+    }
+
+    log_buffer_get(logs, 16384);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    char* logs_json = (char*)malloc(16384);
+    if (logs_json == NULL) {
+        free(logs);
+        json_entry_t error_json[] = {
+            {"success", JSON_TYPE_BOOL, &(int){0}},
+            {"message", JSON_TYPE_STRING, "Memory allocation failed"},
+        };
+        char* json_response = build_json_safe(JSON_ARRAY_SIZE(error_json), error_json);
+        esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+        free(json_response);
+        return res;
+    }
+
+    strcpy(logs_json, "[");
+    const char* start = logs;
+    bool first = true;
+    int line_count = 0;
+
+    for (const char* p = logs; *p != '\0'; p++) {
+        if (*p == '\n' || *(p + 1) == '\0') {
+            size_t line_len = (*p == '\n') ? (p - start) : (p + 1 - start);
+
+            if (line_len > 0) {
+                if (!first) {
+                    strcat(logs_json, ",");
+                }
+                strcat(logs_json, "\"");
+
+                for (size_t i = 0; i < line_len && strlen(logs_json) < 16300; i++) {
+                    if (start[i] == '"') {
+                        strcat(logs_json, "\\\"");
+                    } else if (start[i] == '\\') {
+                        strcat(logs_json, "\\\\");
+                    } else if (start[i] == '\r') {
+                    } else {
+                        size_t current_len = strlen(logs_json);
+                        logs_json[current_len] = start[i];
+                        logs_json[current_len + 1] = '\0';
+                    }
+                }
+
+                strcat(logs_json, "\"");
+                line_count++;
+                first = false;
+            }
+
+            if (*p == '\n') {
+                start = p + 1;
+            }
+        }
+    }
+
+    strcat(logs_json, "]");
+
+    // Recompute line_count from the built JSON array to ensure accuracy
+    line_count = 0;
+    for (const char* q = logs_json + 1; *q != '\0'; q++) {
+        if (*q == '"' && (*(q - 1) == '[' || *(q - 1) == ',')) {
+            line_count++;
+        }
+    }
+
+    json_entry_t success_json[] = {
+        {"success", JSON_TYPE_BOOL, &(int){1}},
+        {"log_lines", JSON_TYPE_RAW, logs_json},
+        {"total_lines", JSON_TYPE_NUMBER, &line_count},
+    };
+
+    char* json_response = build_json_safe(JSON_ARRAY_SIZE(success_json), success_json);
+    esp_err_t result = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+
+    free(json_response);
+    free(logs);
+    free(logs_json);
+    return result;
+}
+
+esp_err_t logs_clear_handler(httpd_req_t* req) {
+    log_buffer_clear();
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    json_entry_t success_json[] = {
+        {"success", JSON_TYPE_BOOL, &(int){1}},
+        {"message", JSON_TYPE_STRING, "Logs cleared"},
+    };
+
+    char* json_response = build_json_safe(JSON_ARRAY_SIZE(success_json), success_json);
+    esp_err_t result = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+    free(json_response);
+    return result;
 }
