@@ -12,7 +12,6 @@ permissions:
 
 env:
   IDF_PATH: "/opt/esp/idf"
-  IDF_TOOLS_PATH: "/opt/esp"
 
 jobs:
   build:
@@ -27,23 +26,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Fix git ownership
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: |
-            ~/.espressif
             build/
-            .idf_cache/
-          key: esp-idf-cache-${{ runner.os }}
-
-      - name: Set up ESP-IDF
-        run: |
-          source $IDF_PATH/export.sh
-          idf.py reconfigure
+          key: esp-idf-cache-${{ hashFiles('**/CMakeLists.txt', '**/sdkconfig', '**/sdkconfig.defaults') }}
+          restore-keys: |
+            esp-idf-cache-
 
       - name: Build firmware
         run: |
-          source $IDF_PATH/export.sh
+          . $IDF_PATH/export.sh
           idf.py build
 
       - name: Upload artifacts
