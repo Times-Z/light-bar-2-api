@@ -13,7 +13,7 @@
 
 <a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/01_login.gif" alt="gif_login" /></a>
 <a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/02_website.png" alt="website" /></a>
-<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/03_website.png" alt="website02" /></a>
+<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/03_logs.png" alt="logs" /></a>
 
 </div>
 
@@ -126,6 +126,7 @@ idf.py monitor
 - [x] NTP sync (default => build date)
 - [x] X-API-Key based header protection for needed endpoint
 - [x] Scan and get the Xiaomi remote ID
+- [x] Show ESP32 logs from web UI
 - [] Store the Xiaomi remote ID in the NVS storage
 - [] Send commands to the bar
 

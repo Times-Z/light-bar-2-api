@@ -38,7 +38,37 @@
       >
         🔑
       </button>
+      <button
+        id="logs-toggle"
+        class="logs-toggle"
+        title="Show Logs"
+        aria-label="Show Logs"
+      >
+        📋
+      </button>
     </header>
+
+    <div id="logs-modal" class="logs-modal hidden">
+      <div class="logs-modal-overlay"></div>
+      <div class="logs-modal-content">
+        <div class="logs-modal-header">
+          <h2>ESP32 Logs</h2>
+          <button
+            id="logs-close"
+            class="logs-close-btn"
+            title="Close"
+            aria-label="Close Logs"
+          >
+            ×
+          </button>
+        </div>
+        <div class="logs-modal-body">
+          <button id="logs-fetch-btn" class="logs-fetch-btn">Fetch Logs</button>
+          <div id="logs-loader" class="logs-loader"></div>
+          <div id="logs-output" class="logs-output"></div>
+        </div>
+      </div>
+    </div>
 
     <main>
       <div class="dashboard">
@@ -176,6 +206,77 @@
             setHidden(false);
             localStorage.setItem(COLLAPSE_STORAGE, "0");
           });
+        });
+      })();
+
+      // Logs Modal Handler
+      (function () {
+        const LOGS_STORAGE = "logs_modal_hidden";
+        const modal = document.getElementById("logs-modal");
+        const toggleBtn = document.getElementById("logs-toggle");
+        const closeBtn = document.getElementById("logs-close");
+        const fetchBtn = document.getElementById("logs-fetch-btn");
+        const logsOutput = document.getElementById("logs-output");
+        const logsLoader = document.getElementById("logs-loader");
+
+        const setModalHidden = (hidden) => {
+          if (hidden) {
+            modal.classList.add("hidden");
+          } else {
+            modal.classList.remove("hidden");
+          }
+        };
+
+        let stored = localStorage.getItem(LOGS_STORAGE);
+        let hidden = stored === "1" || stored === null;
+        setModalHidden(hidden);
+
+        toggleBtn.addEventListener("click", function () {
+          setModalHidden(false);
+          localStorage.setItem(LOGS_STORAGE, "0");
+        });
+
+        closeBtn.addEventListener("click", function () {
+          setModalHidden(true);
+          localStorage.setItem(LOGS_STORAGE, "1");
+        });
+
+        modal.addEventListener("click", function (event) {
+          if (event.target.classList.contains("logs-modal-overlay")) {
+            setModalHidden(true);
+            localStorage.setItem(LOGS_STORAGE, "1");
+          }
+        });
+
+        fetchBtn.addEventListener("click", function () {
+          logsLoader.style.display = "block";
+          logsOutput.textContent = "Fetching logs...";
+
+          fetch("/api/v1/logs")
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then((data) => {
+              logsLoader.style.display = "none";
+
+              if (Array.isArray(data)) {
+                logsOutput.textContent = data.join("\n");
+              } else if (typeof data === "object" && data.logs) {
+                logsOutput.textContent = data.logs.join("\n");
+              } else if (typeof data === "string") {
+                logsOutput.textContent = data;
+              } else {
+                logsOutput.textContent = JSON.stringify(data, null, 2);
+              }
+            })
+            .catch((error) => {
+              logsLoader.style.display = "none";
+              logsOutput.textContent = `Error fetching logs: ${error.message}`;
+              logsOutput.style.color = "var(--error-color)";
+            });
         });
       })();
     </script>
