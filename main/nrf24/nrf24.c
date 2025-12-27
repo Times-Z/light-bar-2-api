@@ -36,6 +36,7 @@ static SemaphoreHandle_t nrf24_mutex = NULL;
 #define NRF_SPI_HOST SPI3_HOST
 
 static spi_device_handle_t nrf_spi;
+static bool spi_bus_initialized = false;
 
 // Register map
 #define NRF_REG_CONFIG 0x00
@@ -193,13 +194,14 @@ static esp_err_t nrf24_init_spi(void) {
         .queue_size = 1,
     };
 
-    esp_err_t err = spi_bus_initialize(NRF_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
-    if (err == ESP_ERR_INVALID_STATE) {
-        err = ESP_OK;
-    }
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "SPI bus init failed: %d", err);
-        return err;
+    esp_err_t err;
+    if (!spi_bus_initialized) {
+        err = spi_bus_initialize(NRF_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "SPI bus init failed: %d", err);
+            return err;
+        }
+        spi_bus_initialized = true;
     }
 
     if (nrf_spi == NULL) {
