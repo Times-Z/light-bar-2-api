@@ -1,6 +1,7 @@
 #include "v1.h"
 #include "helper/auth.h"
 #include "log_buffer.h"
+#include "nrf24.h"
 
 esp_err_t status_handler(httpd_req_t* req) {
     uint32_t free_heap = esp_get_free_heap_size();
@@ -324,7 +325,6 @@ esp_err_t logs_handler(httpd_req_t* req) {
 
     strcat(logs_json, "]");
 
-    // Recompute line_count from the built JSON array to ensure accuracy
     line_count = 0;
     for (const char* q = logs_json + 1; *q != '\0'; q++) {
         if (*q == '"' && (*(q - 1) == '[' || *(q - 1) == ',')) {
@@ -362,4 +362,45 @@ esp_err_t logs_clear_handler(httpd_req_t* req) {
     esp_err_t result = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
     free(json_response);
     return result;
+}
+
+esp_err_t nrf24_scan_handler(httpd_req_t* req) {
+    char buf[256];
+    char duration_str[32] = "10";
+
+    if (httpd_req_get_url_query_len(req) > 0) {
+        if (httpd_req_get_url_query_str(req, buf, sizeof(buf)) == ESP_OK) {
+            httpd_query_key_value(buf, "duration", duration_str, sizeof(duration_str));
+        }
+    }
+
+    uint32_t duration_sec = strtoul(duration_str, NULL, 10);
+    if (duration_sec == 0 || duration_sec > 60) {
+        duration_sec = 10;
+    }
+
+    uint32_t duration_ms = duration_sec * 1000;
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    esp_err_t err = nrf24_scan_xiaomi(duration_ms);
+
+    const xiaomi_scan_result_t* result = nrf24_get_last_scan_result();
+
+    int success_val = (err == ESP_OK && result->id_found) ? 1 : 0;
+    char remote_id_hex[16];
+    json_entry_t response_json[2];
+    response_json[0] = (json_entry_t){"success", JSON_TYPE_BOOL, &success_val};
+    if (success_val) {
+        snprintf(remote_id_hex, sizeof(remote_id_hex), "0x%06lX", (unsigned long)result->remote_id);
+        response_json[1] = (json_entry_t){"xiaomi_remote_id", JSON_TYPE_STRING, remote_id_hex};
+    } else {
+        response_json[1] = (json_entry_t){"xiaomi_remote_id", JSON_TYPE_RAW, "null"};
+    }
+
+    char* json_response = build_json_safe(JSON_ARRAY_SIZE(response_json), response_json);
+    esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+    free(json_response);
+    return res;
 }

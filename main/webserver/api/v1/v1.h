@@ -9,3 +9,4 @@ esp_err_t wifi_connect_handler(httpd_req_t* req);
 esp_err_t ntp_set_handler(httpd_req_t* req);
 esp_err_t logs_handler(httpd_req_t* req);
 esp_err_t logs_clear_handler(httpd_req_t* req);
+esp_err_t nrf24_scan_handler(httpd_req_t* req);

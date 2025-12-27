@@ -1,6 +1,7 @@
 {
-  "wifi_ssid": "YourWiFiSSID",
-  "wifi_password": "YourWiFiPassword",
-  "api_key": "YourSecureApiKey",
-  "ntp_server": ""
+  "wifi_ssid": "",
+  "wifi_password": "",
+  "api_key": "",
+  "ntp_server": "",
+  "xiaomi_remote_id": ""
 }

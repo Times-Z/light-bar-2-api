@@ -64,6 +64,31 @@
           <div id="ntp-loader" class="loader"></div>
           <div id="ntp-output" class="output-container"></div>
         </section>
+
+        <section id="nrf24-section" class="container">
+          <h2>Xiaomi Remote ID Detection</h2>
+          <p>
+            Hold all buttons on your Xiaomi remote during the scan to capture
+            all 6 command patterns:
+          </p>
+          <ul>
+            <li>Press the knob (On/Off)</li>
+            <li>Press + Turn knob cooler and warmer (color temperature)</li>
+            <li>Turn knob higher and lower (brightness)</li>
+            <li>Long-press knob (auto desktop mode)</li>
+          </ul>
+          <label for="nrf24-duration-input">Scan Duration (seconds):</label>
+          <input
+            type="number"
+            id="nrf24-duration-input"
+            value="10"
+            min="1"
+            max="60"
+          />
+          <button id="nrf24-scan-btn">Start NRF24 Scan</button>
+          <div id="nrf24-loader" class="loader"></div>
+          <div id="nrf24-output" class="output-container"></div>
+        </section>
       </div>
     </main>
 

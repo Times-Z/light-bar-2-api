@@ -96,7 +96,7 @@ httpd_handle_t webserver_start(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     // Optimized configuration
-    config.stack_size = 3072;
+    config.stack_size = 6144;
     config.max_open_sockets = 5;
     config.lru_purge_enable = true;
     config.recv_wait_timeout = 2;

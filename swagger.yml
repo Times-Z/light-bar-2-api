@@ -275,6 +275,52 @@ paths:
                     type: string
                     example: "Unauthorized"
 
+  /api/v1/nrf24/scan:
+    get:
+      tags:
+        - V1
+      summary: Scan for Xiaomi remote control
+      description: Performs a scan to detect and decode the Xiaomi remote control ID from NRF24 radio packets. The scan listens on multiple 2.4 GHz channels and classifies received commands (on/off, cooler, warmer, higher, lower, reset).
+      parameters:
+        - name: duration
+          in: query
+          description: Duration of the scan in seconds (1-60). Default is 10 seconds.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 60
+            default: 10
+            example: 10
+      responses:
+        "200":
+          description: Scan completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the scan detected a remote control ID
+                    example: true
+                  xiaomi_remote_id:
+                    type: string
+                    description: The detected remote control ID in hexadecimal format (null if not detected)
+                    example: "0x700000"
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+
 components:
   securitySchemes:
     ApiKeyAuth:
