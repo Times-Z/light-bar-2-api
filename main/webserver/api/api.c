@@ -58,6 +58,8 @@ void register_api_v1_endpoints(httpd_handle_t server) {
     static const api_handler_ctx_t ctx_nrf24_scan = {.handler = nrf24_scan_handler, .require_auth = true};
     static const api_handler_ctx_t ctx_xiaomi_set_id = {.handler = xiaomi_set_id_handler, .require_auth = true};
     static const api_handler_ctx_t ctx_xiaomi_get_id = {.handler = xiaomi_get_id_handler, .require_auth = true};
+    static const api_handler_ctx_t ctx_xiaomi_power_toggle = {.handler = xiaomi_power_toggle_handler,
+                                                              .require_auth = true};
 
     httpd_uri_t status_uri = {
         .uri = "/api/v1/status",
@@ -113,6 +115,12 @@ void register_api_v1_endpoints(httpd_handle_t server) {
         .handler = api_dispatch,
         .user_ctx = (void*)&ctx_xiaomi_get_id,
     };
+    httpd_uri_t xiaomi_power_toggle_uri = {
+        .uri = "/api/v1/xiaomi/power/toogle",
+        .method = HTTP_POST,
+        .handler = api_dispatch,
+        .user_ctx = (void*)&ctx_xiaomi_power_toggle,
+    };
 
     httpd_uri_t preflight_uri = {
         .uri = "/api/v1/*",
@@ -131,5 +139,6 @@ void register_api_v1_endpoints(httpd_handle_t server) {
     httpd_register_uri_handler(server, &nrf24_scan_uri);
     httpd_register_uri_handler(server, &xiaomi_set_id_uri);
     httpd_register_uri_handler(server, &xiaomi_get_id_uri);
+    httpd_register_uri_handler(server, &xiaomi_power_toggle_uri);
     httpd_register_uri_handler(server, &preflight_uri);
 }

@@ -2,6 +2,7 @@
 
 #include <esp_err.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /// Result from Xiaomi scan
 typedef struct {
@@ -18,3 +19,4 @@ typedef struct {
 esp_err_t nrf24_check_connection(void);
 esp_err_t nrf24_scan_xiaomi(uint32_t duration_ms);
 const xiaomi_scan_result_t* nrf24_get_last_scan_result(void);
+esp_err_t nrf24_send_xiaomi_power(uint32_t remote_id);

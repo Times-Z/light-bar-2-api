@@ -4,10 +4,13 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <driver/gpio.h>
 #include <driver/spi_master.h>
 #include <esp_log.h>
+#include <esp_random.h>
+#include <esp_rom_sys.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -49,6 +52,7 @@ static bool spi_bus_initialized = false;
 #define NRF_REG_STATUS 0x07
 #define NRF_REG_RX_ADDR_P0 0x0A
 #define NRF_REG_RX_ADDR_P1 0x0B
+#define NRF_REG_TX_ADDR 0x10
 #define NRF_REG_RX_PW_P0 0x11
 #define NRF_REG_RX_PW_P1 0x12
 #define NRF_REG_FIFO_STATUS 0x17
@@ -59,29 +63,24 @@ static bool spi_bus_initialized = false;
 #define NRF_CMD_R_REGISTER 0x00
 #define NRF_CMD_W_REGISTER 0x20
 #define NRF_CMD_R_RX_PAYLOAD 0x61
+#define NRF_CMD_W_TX_PAYLOAD 0xA0
+#define NRF_CMD_FLUSH_TX 0xE1
 #define NRF_CMD_FLUSH_RX 0xE2
 
 // Bit helpers
 #define NRF_STATUS_RX_DR (1 << 6)
+#define NRF_STATUS_TX_DS (1 << 5)
+#define NRF_STATUS_MAX_RT (1 << 4)
 #define NRF_FIFO_RX_EMPTY 0x01
 
 static xiaomi_scan_result_t last_scan_result = {0};
+static uint8_t xiaomi_tx_seq = 0;
 
 typedef struct {
     uint32_t id;
     uint16_t cmd;
     uint8_t seq;
 } xiaomi_packet_t;
-
-typedef enum {
-    XCMD_UNKNOWN = 0,
-    XCMD_ONOFF = 1,
-    XCMD_COOLER = 2,
-    XCMD_WARMER = 3,
-    XCMD_HIGHER = 4,
-    XCMD_LOWER = 5,
-    XCMD_RESET = 6,
-} xiaomi_cmd_t;
 
 /// @brief Writes a value to a single register of the nRF24L01+ module
 /// @param reg The register address to write to
@@ -265,6 +264,80 @@ static uint16_t nrf24_crc16(const uint8_t* data, size_t len) {
     return crc;
 }
 
+/// @brief Applies Xiaomi whitening/scrambling to packet data
+/// @param data Pointer to data buffer (will be modified in-place)
+/// @param len Length of data buffer
+static void nrf24_xiaomi_whiten(uint8_t* data, size_t len) {
+    // Whitening pattern (18 bytes)
+    // Bytes 0-11: fixed mask; Byte 12: 0x90; Byte 13: 0x00; Byte 14: 0xBC; Bytes 15-17: 0x00
+    static const uint8_t whitening_pattern[18] = {0xFA, 0xA5, 0x9E, 0xB3, 0x92, 0x6D, 0xAE, 0x1B, 0x48,
+                                                  0x1D, 0x2E, 0x80, 0x90, 0x00, 0xBC, 0x00, 0x00, 0x00};
+
+    size_t n = (len < 18) ? len : 18;
+    for (size_t i = 0; i < n; i++) {
+        data[i] ^= whitening_pattern[i];
+    }
+}
+
+/// @brief Builds a Xiaomi packet frame (18 bytes) using CRC+whitening algorithm
+/// Structure (plaintext before whitening):
+/// [0-7]  preamble 53 39 14 DD 1C 49 34 12
+/// [8-10] remote id (MSB..LSB)
+/// [11]   0xFF
+/// [12]   sequence
+/// [13]   command (1 byte)
+/// [14]   parameter/brightness (1 byte)
+/// [15-16] CRC16-CCITT over bytes 0-14 (big-endian)
+/// [17]   padding (0x00)
+/// @param remote_id 24-bit remote id (e.g., 0x701634)
+/// @param seq Sequence value
+/// @param cmd Command byte (e.g., 0x01=ON, 0x02=OFF, 0x81/0x82=brightness)
+/// @param param Parameter/brightness byte
+/// @param output Buffer to store the 18-byte whitened frame
+/// @return ESP_OK
+static esp_err_t nrf24_build_xiaomi_frame(uint32_t remote_id, uint8_t seq, uint8_t cmd, uint8_t param,
+                                          uint8_t* output) {
+    if (output == NULL || remote_id > 0xFFFFFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Build plaintext packet before whitening
+    uint8_t packet[18] = {0};
+
+    // Preamble 8 bytes
+    const uint8_t preamble[8] = {0x53, 0x39, 0x14, 0xDD, 0x1C, 0x49, 0x34, 0x12};
+    memcpy(packet, preamble, 8);
+
+    // Remote ID 3 bytes
+    packet[8] = (remote_id >> 16) & 0xFF;
+    packet[9] = (remote_id >> 8) & 0xFF;
+    packet[10] = remote_id & 0xFF;
+
+    // Separator always 0xFF
+    packet[11] = 0xFF;
+
+    // Sequence / Command / Parameter
+    packet[12] = seq;
+    packet[13] = cmd;
+    packet[14] = param;
+
+    // Calculate CRC16 on first 15 bytes
+    uint16_t crc = nrf24_crc16(packet, 15);
+    packet[15] = (crc >> 8) & 0xFF;
+    packet[16] = crc & 0xFF;
+
+    // Padding
+    packet[17] = 0x00;
+
+    // Copy plaintext then apply whitening
+    memcpy(output, packet, 18);
+
+    // Apply whitening to bytes 0-17
+    nrf24_xiaomi_whiten(output, 18);
+
+    return ESP_OK;
+}
+
 /// @brief Searches for and decodes a Xiaomi packet from raw received data
 /// @param raw Pointer to the raw data buffer
 /// @param len Length of the raw data buffer in bytes
@@ -304,28 +377,6 @@ static bool nrf24_find_and_decode_packet(const uint8_t* raw, size_t len, xiaomi_
     }
 
     return false;
-}
-
-/// @brief Classifies a Xiaomi command based on its command code
-/// from https://github.com/lamperez/xiaomi-lightbar-nrf24?tab=readme-ov-file#command-codes
-/// @param cmd The command code to classify
-/// @return The classified xiaomi_cmd_t value
-static xiaomi_cmd_t classify_cmd(uint16_t cmd) {
-    uint8_t hi = (uint8_t)(cmd >> 8);
-    uint8_t lo = (uint8_t)(cmd & 0xFF);
-    if (hi == 0x01) return XCMD_ONOFF;
-    if (hi == 0x06 || hi == 0x07) return XCMD_RESET;
-
-    // Cooler ranges: 0x0201..0x020F or 0x0301..0x030F
-    if ((hi == 0x02 && lo >= 0x01 && lo <= 0x0F) || (hi == 0x03 && lo >= 0x01 && lo <= 0x0F)) return XCMD_COOLER;
-    // Warmer ranges: 0x02F1..0x02FF or 0x03F1..0x03FF
-    if ((hi == 0x02 && lo >= 0xF1) || (hi == 0x03 && lo >= 0xF1)) return XCMD_WARMER;
-    // Higher ranges: 0x0401..0x040F or 0x0501..0x050F
-    if ((hi == 0x04 && lo >= 0x01 && lo <= 0x0F) || (hi == 0x05 && lo >= 0x01 && lo <= 0x0F)) return XCMD_HIGHER;
-    // Lower ranges: 0x04F1..0x04FF or 0x05F1..0x05FF
-    if ((hi == 0x04 && lo >= 0xF1) || (hi == 0x05 && lo >= 0xF1)) return XCMD_LOWER;
-
-    return XCMD_UNKNOWN;
 }
 
 /// @brief Checks the connection to the NRF24L01+ module by reading and writing its CONFIG register
@@ -426,6 +477,124 @@ static esp_err_t nrf24_read_payload(uint8_t* data, size_t len) {
     return ESP_OK;
 }
 
+/// @brief Writes a payload to the TX FIFO
+/// @param data Pointer to payload buffer
+/// @param len Number of bytes to send (max 32)
+/// @return ESP_OK on success or error code on failure
+static esp_err_t nrf24_write_payload(const uint8_t* data, size_t len) {
+    if (len > 32 || data == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t tx[1 + 32] = {0};
+    tx[0] = NRF_CMD_W_TX_PAYLOAD;
+    memcpy(&tx[1], data, len);
+
+    spi_transaction_t t = {
+        .length = (len + 1) * 8,
+        .tx_buffer = tx,
+    };
+
+    return spi_device_transmit(nrf_spi, &t);
+}
+
+esp_err_t nrf24_send_xiaomi_power(uint32_t remote_id) {
+    if (nrf24_mutex == NULL || xSemaphoreTake(nrf24_mutex, pdMS_TO_TICKS(5000)) == pdFALSE) {
+        ESP_LOGE(TAG, "Failed to acquire nrf24 mutex");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    esp_err_t err = nrf24_init_spi();
+    if (err != ESP_OK) {
+        xSemaphoreGive(nrf24_mutex);
+        return err;
+    }
+
+    static const uint8_t tx_addr[5] = {0x67, 0x22, 0x00, 0x00, 0x00};
+
+    uint8_t action_payload[18] = {0};
+    uint8_t seq = xiaomi_tx_seq;  // simple rolling sequence
+    uint8_t cmd = 0x80;           // Toogle power
+    uint8_t param = 0x3C;         // param inferred from logs (whitened 0x80 => plain 0x3C)
+    nrf24_build_xiaomi_frame(remote_id, seq, cmd, param, action_payload);
+
+    // Configure NRF24 for Xiaomi broadcast (no auto-ack)
+    gpio_set_level(PIN_NUM_CE, 0);
+    nrf24_write_register(NRF_REG_EN_AA, 0x00, NULL);
+    nrf24_write_register(NRF_REG_SETUP_RETR, 0x00, NULL);
+    nrf24_write_register(NRF_REG_EN_RXADDR, 0x01, NULL);
+    nrf24_write_register(NRF_REG_SETUP_AW, 0x03, NULL);
+    nrf24_write_register(NRF_REG_DYNPD, 0x00, NULL);
+    nrf24_write_register(NRF_REG_FEATURE, 0x00, NULL);
+    nrf24_write_register(NRF_REG_RF_SETUP, 0x0E, NULL);
+    nrf24_write_register(NRF_REG_RX_PW_P0, 32, NULL);
+    nrf24_write_register_buf(NRF_REG_TX_ADDR, tx_addr, sizeof(tx_addr));
+    nrf24_write_register_buf(NRF_REG_RX_ADDR_P0, tx_addr, sizeof(tx_addr));
+    nrf24_write_register(NRF_REG_STATUS, NRF_STATUS_TX_DS | NRF_STATUS_MAX_RT, NULL);
+    nrf24_command(NRF_CMD_FLUSH_TX, NULL);
+    nrf24_command(NRF_CMD_FLUSH_RX, NULL);
+    nrf24_write_register(NRF_REG_CONFIG, 0x02, NULL);
+
+    vTaskDelay(pdMS_TO_TICKS(5));
+
+    static const uint8_t channels[] = {6, 15, 43, 68};
+    const int passes = 2;  // repeat through channels to improve reliability, without that many devices miss packets
+    bool sent = false;
+
+    char payload_hex[3 * 18 + 4] = {0};
+    size_t pos = 0;
+    for (int i = 0; i < 18 && pos + 3 < sizeof(payload_hex); i++) {
+        pos +=
+            snprintf(payload_hex + pos, sizeof(payload_hex) - pos, "%02X%s", action_payload[i], (i == 17 ? "" : " "));
+    }
+    ESP_LOGI(TAG, "Sending Xiaomi power toogle to 0x%06lX: %s", (unsigned long)remote_id, payload_hex);
+
+    for (int pass = 0; pass < passes; pass++) {
+        for (size_t i = 0; i < (sizeof(channels) / sizeof(channels[0])); i++) {
+            nrf24_write_register(NRF_REG_RF_CH, channels[i], NULL);
+            ESP_LOGI("NRF24",
+                     "TX pass %d ch %u payload: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X "
+                     "%02X %02X %02X %02X",
+                     pass + 1, (unsigned)channels[i], action_payload[0], action_payload[1], action_payload[2],
+                     action_payload[3], action_payload[4], action_payload[5], action_payload[6], action_payload[7],
+                     action_payload[8], action_payload[9], action_payload[10], action_payload[11], action_payload[12],
+                     action_payload[13], action_payload[14], action_payload[15], action_payload[16],
+                     action_payload[17]);
+            nrf24_command(NRF_CMD_FLUSH_TX, NULL);
+
+            err = nrf24_write_payload(action_payload, sizeof(action_payload));
+            if (err != ESP_OK) {
+                xSemaphoreGive(nrf24_mutex);
+                return err;
+            }
+
+            gpio_set_level(PIN_NUM_CE, 1);
+            esp_rom_delay_us(100);
+            gpio_set_level(PIN_NUM_CE, 0);
+
+            vTaskDelay(pdMS_TO_TICKS(2));
+
+            uint8_t status = 0;
+            nrf24_read_register(NRF_REG_STATUS, &status, NULL);
+            nrf24_write_register(NRF_REG_STATUS, NRF_STATUS_TX_DS | NRF_STATUS_MAX_RT, NULL);
+
+            if ((status & NRF_STATUS_MAX_RT) == 0) {
+                sent = true;
+            }
+        }
+    }
+
+    esp_err_t result = sent ? ESP_OK : ESP_FAIL;
+
+    if (result == ESP_OK) {
+        xiaomi_tx_seq++;
+    }
+
+    gpio_set_level(PIN_NUM_CE, 0);
+    xSemaphoreGive(nrf24_mutex);
+    return result;
+}
+
 /// @brief Quick scan for Xiaomi lightbar patterns and save results for API access
 /// @param duration_ms Duration of scan in milliseconds (e.g., 10000 for 10 seconds)
 /// @return ESP_OK if patterns found, ESP_ERR_NOT_FOUND otherwise
@@ -441,7 +610,6 @@ esp_err_t nrf24_scan_xiaomi(uint32_t duration_ms) {
     last_scan_result.last_scan_time = esp_log_timestamp();
     last_scan_result.id_found = 0;
     last_scan_result.remote_id = 0;
-    last_scan_result.commands_mask = 0;
 
     ESP_LOGI(TAG, "Starting quick Xiaomi scan for %u ms", duration_ms);
 
@@ -495,47 +663,21 @@ esp_err_t nrf24_scan_xiaomi(uint32_t duration_ms) {
                 }
 
                 if (nrf24_find_and_decode_packet(raw, sizeof(raw), &pkt)) {
+                    char raw_hex[3 * 18 + 4] = {0};
+                    size_t pos = 0;
+                    for (int i = 0; i < 18 && pos + 3 < sizeof(raw_hex); i++) {
+                        pos += snprintf(raw_hex + pos, sizeof(raw_hex) - pos, "%02X%s", raw[i], (i == 17 ? "" : " "));
+                    }
+
+                    uint8_t seq = raw[11];
+                    uint8_t rolling = raw[12];
+                    uint8_t action = raw[13];
+                    ESP_LOGI(TAG, "XIAOMI RX ch=%u: %s [seq=%02X roll=%02X action=%02X]", (unsigned)channels[c],
+                             raw_hex, seq, rolling, action);
+
                     last_scan_result.found_count++;
                     last_scan_result.remote_id = pkt.id;
                     last_scan_result.id_found = 1;
-                    xiaomi_cmd_t kind = classify_cmd(pkt.cmd);
-                    switch (kind) {
-                        case XCMD_ONOFF:
-                            last_scan_result.commands_mask |= (1 << 0);
-                            break;
-                        case XCMD_COOLER:
-                            last_scan_result.commands_mask |= (1 << 1);
-                            break;
-                        case XCMD_WARMER:
-                            last_scan_result.commands_mask |= (1 << 2);
-                            break;
-                        case XCMD_HIGHER:
-                            last_scan_result.commands_mask |= (1 << 3);
-                            break;
-                        case XCMD_LOWER:
-                            last_scan_result.commands_mask |= (1 << 4);
-                            break;
-                        case XCMD_RESET:
-                            last_scan_result.commands_mask |= (1 << 5);
-                            break;
-                        default:
-                            break;
-                    }
-                    ESP_LOGD(TAG, "Decoded pkt: ID=0x%06X CMD=0x%04X SEQ=%u mask=0x%02X", pkt.id, pkt.cmd, pkt.seq,
-                             last_scan_result.commands_mask);
-                }
-
-                if ((last_scan_result.commands_mask & 0x3F) == 0x3F) {
-                    ESP_LOGI(TAG, "All six Xiaomi command patterns observed");
-                    nrf24_read_register(NRF_REG_FIFO_STATUS, &fifo, NULL);
-                    while ((fifo & NRF_FIFO_RX_EMPTY) == 0) {
-                        nrf24_read_payload(raw, sizeof(raw));
-                        nrf24_read_register(NRF_REG_FIFO_STATUS, &fifo, NULL);
-                    }
-                    nrf24_write_register(NRF_REG_STATUS, NRF_STATUS_RX_DR, NULL);
-                    gpio_set_level(PIN_NUM_CE, 0);
-                    xSemaphoreGive(nrf24_mutex);
-                    return ESP_OK;
                 }
 
                 nrf24_read_register(NRF_REG_FIFO_STATUS, &fifo, NULL);

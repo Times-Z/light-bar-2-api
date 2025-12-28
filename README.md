@@ -131,7 +131,29 @@ idf.py flash
 - [x] Scan and get the Xiaomi remote ID
 - [x] Show ESP32 logs from web UI
 - [x] Store the Xiaomi remote ID in the NVS storage
-- [] Send commands to the bar
+- [x] Send commands power on / off
+- [] Send others commands to the bar
+
+## Data Whitening Logic
+
+The Whitening process is a data transformation technique used in radio communications (nRF24, Bluetooth, etc.) to ensure signal reliability
+
+Why is it used?
+Clock Recovery: Long sequences of identical bits (e.g., 00000000) make it difficult for the receiver to stay synchronized with the transmitter's clock
+
+DC Balancing: It prevents a "DC Offset" by ensuring an equal distribution of 0s and 1s, which keeps the radio frequency stable
+
+### How it works
+
+The algorithm uses a Linear Feedback Shift Register (LFSR) to generate a pseudo-random bit sequence (PRBS) based on a specific polynomial and a starting value called a Seed
+
+XOR Operation: Each byte of the plaintext packet (including the CRC) is combined with the LFSR output using a bitwise XOR operation
+
+Symmetry: Because XOR is reversible, the receiver applies the exact same algorithm with the same seed to "de-whiten" the data and recover the original message
+
+### Implementation in this project
+
+In [`nrf24_build_xiaomi_frame`](main/nrf24/nrf24.c#L298), whitening is the final step before transmission. It is applied to the entire 18-byte frame (Preamble + Payload + CRC) to scramble the data pattern across the airwaves while maintaining the integrity of the underlying protocol
 
 ## License
 

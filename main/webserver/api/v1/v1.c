@@ -4,6 +4,8 @@
 #include "nrf24.h"
 #include "nvs.h"
 
+#include <stdlib.h>
+
 esp_err_t status_handler(httpd_req_t* req) {
     uint32_t free_heap = esp_get_free_heap_size();
 
@@ -488,6 +490,58 @@ esp_err_t xiaomi_get_id_handler(httpd_req_t* req) {
 
     json_entry_t response_json[] = {{"success", JSON_TYPE_BOOL, &(int){loaded ? 1 : 0}},
                                     {"xiaomi_id", JSON_TYPE_STRING, xiaomi_id}};
+
+    char* json_response = build_json_safe(JSON_ARRAY_SIZE(response_json), response_json);
+    esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+    free(json_response);
+    return res;
+}
+
+esp_err_t xiaomi_power_toggle_handler(httpd_req_t* req) {
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+
+    char raw_id[33] = {0};
+    uint32_t remote_id = 0;
+
+    if (!nvs_load_xiaomi_id(raw_id, sizeof(raw_id))) {
+        json_entry_t error_json[] = {
+            {"success", JSON_TYPE_BOOL, &(int){0}},
+            {"message", JSON_TYPE_STRING, "No Xiaomi remote id saved"},
+        };
+
+        char* json_response = build_json_safe(JSON_ARRAY_SIZE(error_json), error_json);
+        esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+        free(json_response);
+        return res;
+    }
+
+    char* endptr = NULL;
+    unsigned long parsed = strtoul(raw_id, &endptr, 0);
+    if (endptr == raw_id || parsed == 0 || parsed > 0xFFFFFF) {
+        json_entry_t error_json[] = {
+            {"success", JSON_TYPE_BOOL, &(int){0}},
+            {"message", JSON_TYPE_STRING, "Invalid Xiaomi remote id"},
+        };
+
+        char* json_response = build_json_safe(JSON_ARRAY_SIZE(error_json), error_json);
+        esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);
+        free(json_response);
+        return res;
+    }
+
+    remote_id = (uint32_t)(parsed & 0xFFFFFF);
+
+    esp_err_t err = nrf24_send_xiaomi_power(remote_id);
+    const char* err_name = esp_err_to_name(err);
+    int success_val = (err == ESP_OK) ? 1 : 0;
+
+    json_entry_t response_json[] = {
+        {"success", JSON_TYPE_BOOL, &success_val},
+        {"xiaomi_remote_id", JSON_TYPE_STRING, raw_id},
+        {"command", JSON_TYPE_STRING, "power_toggle"},
+        {"status", JSON_TYPE_STRING, err_name},
+    };
 
     char* json_response = build_json_safe(JSON_ARRAY_SIZE(response_json), response_json);
     esp_err_t res = httpd_resp_send(req, json_response, HTTPD_RESP_USE_STRLEN);

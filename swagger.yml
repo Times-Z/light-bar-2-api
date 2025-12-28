@@ -416,6 +416,48 @@ paths:
                     type: string
                     example: "Unauthorized"
 
+  /api/v1/xiaomi/power/toogle:
+    post:
+      tags:
+        - V1
+      summary: Toggle Xiaomi light bar power
+      description: Sends a power toggle command to the Xiaomi light bar using the stored remote ID.
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Command sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  xiaomi_remote_id:
+                    type: string
+                    example: "0x700000"
+                  command:
+                    type: string
+                    example: "power_toggle"
+                  status:
+                    type: string
+                    example: "ESP_OK"
+        "401":
+          description: Unauthorized (missing or invalid X-API-Key)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Unauthorized"
+
 components:
   securitySchemes:
     ApiKeyAuth:
