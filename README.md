@@ -1,168 +1,311 @@
-# Light bar 2 API
+# Light Bar 2 API
 
-**Light bar 2 API** is a firmware solution that makes the Xiaomi Light Bar smart and connected through a RESTful API. Built on ESP32, it provides wireless control capabilities for your Xiaomi Light Bar via HTTP endpoints.
+> Transform your Xiaomi light bar into a smart, networked device with REST API
 
 <div align="center">
   <br/>
 
-<a href="https://github.com/Times-Z/light-bar-2-api"><img src="https://img.shields.io/github/v/release/Times-Z/light-bar-2-api?label=Latest%20Version&color=c56a90&style=for-the-badge&logo=star)" alt="Latest Version" /></a>
-<a href="https://github.com/Times-Z/light-bar-2-api"><img src="https://img.shields.io/github/actions/workflow/status/Times-Z/light-bar-2-api/.github/workflows/build.yml?branch=main&label=Pipeline%20Status&color=c56a90&style=for-the-badge&logo=star" alt="Latest Version" /></a>
+[![Latest Release](https://img.shields.io/github/v/release/Times-Z/light-bar-2-api?label=Latest%20Version&color=c56a90&style=for-the-badge&logo=star)](https://github.com/Times-Z/light-bar-2-api/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Times-Z/light-bar-2-api/.github/workflows/build.yml?branch=main&label=Pipeline%20Status&color=c56a90&style=for-the-badge&logo=star)](https://github.com/Times-Z/light-bar-2-api/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
   <br/>
+
+**Light bar 2 API** is an open-source firmware solution for the Xiaomi Light Bar (MJGJD01YL) that enables complete wireless control via a RESTful API. Built on ESP32 with an NRF24L01 transceiver
+
   <br/>
 
-<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/01_login.gif" alt="gif_login" /></a>
-<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/02_website.png" alt="website" /></a>
-<a href="https://github.com/Times-Z/light-bar-2-api"><img height="400" src="./.github/assets/03_logs.png" alt="logs" /></a>
+<table>
+  <tr>
+    <td><img height="350" src="./.github/assets/01_login.gif" alt="Login Interface" /></td>
+    <td><img height="350" src="./.github/assets/02_website.png" alt="Web Dashboard" /></td>
+    <td><img height="350" src="./.github/assets/03_logs.png" alt="Live Logs" /></td>
+  </tr>
+</table>
 
 </div>
 
-## Acknowledgements
+---
 
-This project is based on the reverse engineering work by [Lamperez](https://github.com/lamperez/xiaomi-lightbar-nrf24) and [Benallen](https://github.com/benallen-dev/xiaomi-lightbar).
+## Credits
 
-Thanks for your works!
+This project builds upon the excellent reverse engineering work by:
+
+- **[Lamperez](https://github.com/lamperez/xiaomi-lightbar-nrf24)**
+- **[Benallen](https://github.com/benallen-dev/xiaomi-lightbar)**
+- **[Ebinf](https://github.com/ebinf/lightbar2mqtt)**
+
+---
+
+## Table of contents
+
+- [Prerequisites](#-prerequisites)
+- [Hardware Setup](#-hardware-setup)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [API Documentation](#-api-documentation)
+- [Features](#-features)
+- [Technical Details](#-technical-details)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
 
 ## Prerequisites
 
-Before setting up the project, ensure you have the following installed:
+### Software requirements
 
-### Software Requirements
+#### Using devcontainer (zero setup)
 
-- **Python 3** + **pip**
-- **VS Code** with the following extensions:
-  - [C/C++](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
-  - [ESP-IDF](https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension)
-- [ESP-IDF framework 5.5](https://docs.espressif.com/projects/esp-idf/en/v5.5.2/esp32/get-started/index.html)
-- **Optional**: **Docker/docker-compose** for running the devcontainer to avoid installing esp-idf on host
+The project includes a **pre-configured devcontainer** with everything pre-installed:
 
-### Hardware Requirements
+- Python 3.12
+- ESP-IDF 5.5+
+- ESP32 toolchain
+- VS Code extensions
+- Build tools
 
-- **ESP32** microcontroller
-- **NRF24L01** module transceiver
-- **Mi Computer Monitor Light Bar**, model **MJGJD01YL** (without BLE/WiFi), the MJGJD02YL will not work
+**Simply clone and open:**
 
-#### Pinout
+```bash
+git clone https://github.com/Times-Z/light-bar-2-api.git
+code light-bar-2-api
+# Click "Reopen in Container" when prompted
+```
 
-| nRF24     |  ESP32 |
-| :-------- | -----: |
-| VCC       |    3V3 |
-| GND       |    GND |
-| CE        |  Pin 4 |
-| CSN       |  Pin 5 |
-| SCK       | Pin 18 |
-| MOSI (MO) | Pin 23 |
-| MISO (M1) | Pin 19 |
+All dependencies are automatically available inside the container \o/
 
-### Tested Hardware
+#### Manual setup
 
-- [Mi Computer Monitor Light Bar](https://www.mi.com/fr/product/mi-computer-monitor-light-bar/)
+If you prefer not to use devcontainer, install manually:
+
+| Tool        | Version | Purpose                     |
+| ----------- | ------- | --------------------------- |
+| **Python**  | 3.12+   | Build system dependency     |
+| **ESP-IDF** | 5.5+    | ESP32 development framework |
+
+Then configure ESP-IDF following the [official guide](https://docs.espressif.com/projects/esp-idf/en/v5.5.2/esp32/get-started/index.html#manual-installation)
+
+---
+
+## Hardware setup
+
+### Required components
+
+| Component           | Model             | Notes                      |
+| ------------------- | ----------------- | -------------------------- |
+| **Microcontroller** | ESP32 (WROOM-32E) | Tested development board   |
+| **Radio module**    | NRF24L01+PA+LNA   | Tested 2.4GHz transceiver  |
+| **Smart light bar** | MJGJD01YL         | Xiaomi model (no BLE/WiFi) |
+
+> **Compatibility note:** MJGJD02YL is **not compatible** since this model is already connected
+
+### Pinout
+
+```
+┌─────────────┐               ┌──────────┐
+│   NRF24     │───────────────│  ESP32   │
+├─────────────┤               ├──────────┤
+│ VCC    ────────────────────→ 3V3      │
+│ GND    ────────────────────→ GND      │
+│ CE     ────────────────────→ GPIO 4   │
+│ CSN    ────────────────────→ GPIO 5   │
+│ SCK    ────────────────────→ GPIO 18  │
+│ MOSI   ────────────────────→ GPIO 23  │
+│ MISO   ────────────────────→ GPIO 19  │
+└─────────────┘               └──────────┘
+```
+
+| NRF24 Pin | Function    | ESP32 Pin |
+| :-------- | :---------- | --------: |
+| VCC       | Power       |       3V3 |
+| GND       | Ground      |       GND |
+| CE        | Chip Enable |    GPIO 4 |
+| CSN       | Chip Select |    GPIO 5 |
+| SCK       | SPI Clock   |   GPIO 18 |
+| MOSI (M0) | Data Out    |   GPIO 23 |
+| MISO (M1) | Data In     |   GPIO 19 |
+
+### Tested devices
+
+- [Mi computer monitor light bar](https://www.mi.com/fr/product/mi-computer-monitor-light-bar/)
 - [ESP-32S ESP-WROOM-32E](https://fr.aliexpress.com/item/1005004275519535.html)
 - [NRF24L01+PA+LNA](https://amzn.eu/d/drTwkjU)
 
-### Partitions
+---
 
-The project uses a custom partition table tailored for persistent storage, application firmware, and static assets.
+## Flash memory layout
 
-| Name      | Type | SubType | Offset   | Size     | Size (KB) | Description                          |
-| :-------- | :--- | :------ | :------- | :------- | :-------- | :----------------------------------- |
-| `nvs`     | data | nvs     | 0x9000   | 0x80000  | 512 KB    | Non-volatile storage (NVS)           |
-| `factory` | app  | factory | 0x90000  | 0x200000 | 2048 KB   | Main application binary              |
-| `config`  | data | spiffs  | 0x290000 | 0x20000  | 128 KB    | SPIFFS for JSON configuration files  |
-| `www`     | data | spiffs  | 0x2B0000 | 0x150000 | 1344 KB   | SPIFFS for static assets (HTML, CSS) |
+The firmware uses a custom partition scheme optimized for storage and performance:
+
+| Partition | Type | SubType | Offset   | Size    | Purpose                     |
+| :-------- | :--- | :------ | :------- | :------ | :-------------------------- |
+| `nvs`     | data | nvs     | 0x9000   | 512 KB  | Configuration & credentials |
+| `factory` | app  | factory | 0x90000  | 2048 KB | Main firmware binary        |
+| `config`  | data | spiffs  | 0x290000 | 128 KB  | JSON settings files         |
+| `www`     | data | spiffs  | 0x2B0000 | 1344 KB | Web interface assets        |
+
+---
 
 ## Installation
 
-### 1. Clone the repository
+### Step 1: clone the repository
 
-```sh
+```bash
 git clone https://github.com/Times-Z/light-bar-2-api.git
 cd light-bar-2-api
 ```
 
-### 2. Configure ESP-IDF (if you don't use devcontainer)
+### Step 2: set up ESP-IDF
 
-- Open VS Code and install the ESP-IDF extension
-- Follow the setup instructions to configure the ESP32 environment
+**Option A: Using VS code extension**
 
-### 3. Configure the project
+1. Install the **ESP-IDF** extension in VS Code
+2. Follow the extension's setup wizard
+3. Select ESP-IDF v5.5+
 
-Two configuration methods are available:
+**Option B: Using devcontainer**
 
-**1) Using a JSON file (first boot-time only)**
+No setup needed! The devcontainer handles everything
 
-- Copy the template: `cp main/config/default.json main/config/config.json`
-- Fill in `main/config/config.json` with:
-  - `wifi_ssid` and `wifi_password`
-  - `api_key`
-  - `ntp_server`
-  - `xiaomi_remote_id` if already known
-- If the file exists and the Wi-Fi credentials are valid, the ESP32 will connect, store the config in NVS, and will not read the file again (used only at init)
+### Step 3: Configure the project
 
-**2) Using the Web UI or the API**
+#### Method 1: JSON configuration (boot-time)
 
-- All routes are described in the swagger (`swagger.yml`).
-- Configuration entered via the UI/API is persisted directly in NVS if valid
+Create your config file:
 
-If Wi-Fi is not set in `config.json`, or the configured network is unreachable/invalid, the ESP32 falls back to AP mode and creates the access point `Lightbar2api` with password `$tr0ngWifi`, exposing a captive portal so setup works on iPhone/Android as well
-
-### 4. Build and flash the firmware
-
-```sh
-idf.py build
-idf.py flash
+```bash
+cp main/config/default.json main/config/config.json
 ```
 
-## API Documentation
+Edit `main/config/config.json`:
 
-[Light bar 2 API Swagger](./swagger.yml)
+```json
+{
+  "wifi_ssid": "Your_WiFi_Network",
+  "wifi_password": "Your_WiFi_Password",
+  "api_key": "your_secure_api_key",
+  "ntp_server": "pool.ntp.org",
+  "xiaomi_remote_id": "00000000" # <==if you already have it, however a endpoint of the API help you to get it
+}
+```
 
-## Features
+**Note:** This file is used only on first boot. Afterward, configuration persists in NVS
 
-- [x] Embedded web server with HTTP endpoints
-- [x] Wi-Fi station (STA) mode support with auto-connect from `config.json`
-- [x] Captive portal for Wi-Fi access point (AP) mode
-- [x] JSON-based configuration file (`config.json`) for boot-time settings
-- [x] NVS-based persistent storage for credentials (fallback & persistence)
-- [x] Uptime tracking (seconds to days format)
-- [x] Lightweight JSON API for system status and configuration
-- [x] NTP sync (default => build date)
-- [x] X-API-Key based header protection for needed endpoint
-- [x] Scan and get the Xiaomi remote ID
-- [x] Show ESP32 logs from web UI
-- [x] Store the Xiaomi remote ID in the NVS storage
-- [x] Send commands power on / off
-- [] Send others commands to the bar
+#### Method 2: Web UI / REST API
 
-## Data Whitening Logic
+Once the device boots:
 
-The Whitening process is a data transformation technique used in radio communications (nRF24, Bluetooth, etc.) to ensure signal reliability
+1. Connect to wifi or access the captive portal
+2. Open the web dashboard
+3. Configure settings through the UI
+4. Changes are saved automatically to NVS
 
-Why is it used?
-Clock Recovery: Long sequences of identical bits (e.g., 00000000) make it difficult for the receiver to stay synchronized with the transmitter's clock
+#### WiFi access point mode
 
-DC Balancing: It prevents a "DC Offset" by ensuring an equal distribution of 0s and 1s, which keeps the radio frequency stable
+If WiFi credentials are missing or invalid:
 
-### How it works
-
-The algorithm uses a Linear Feedback Shift Register (LFSR) to generate a pseudo-random bit sequence (PRBS) based on a specific polynomial and a starting value called a Seed
-
-XOR Operation: Each byte of the plaintext packet (including the CRC) is combined with the LFSR output using a bitwise XOR operation
-
-Symmetry: Because XOR is reversible, the receiver applies the exact same algorithm with the same seed to "de-whiten" the data and recover the original message
-
-### Implementation in this project
-
-In [`nrf24_build_xiaomi_frame`](main/nrf24/nrf24.c#L298), whitening is the final step before transmission. It is applied to the entire 18-byte frame (Preamble + Payload + CRC) to scramble the data pattern across the airwaves while maintaining the integrity of the underlying protocol
-
-## License
-
-This project is licensed under the MIT License.
-
-## Contributions
-
-Contributions are welcome! Feel free to submit a pull request or open an issue for discussion.
+- **SSID:** `Lightbar2api`
+- **Password:** `$tr0ngWifi`
+- **Portal:** Auto-opens on compatible devices (iOS/Android), otherwise go to `http://10.0.1.1`
 
 ---
 
-Happy Coding! 😊
+## Build & flash
+
+### Build the firmware
+
+```bash
+idf.py build
+```
+
+### Flash to ESP32
+
+```bash
+idf.py flash
+```
+
+### Monitor serial output
+
+```bash
+idf.py monitor
+```
+
+**Note:** All of this commands can be used at the same time, eg : `idf.py build flash monitor`
+
+---
+
+## API documentation
+
+Complete API endpoints are documented in the [Swagger/OpenAPI specification](./swagger.yml).
+
+---
+
+## Features
+
+### Implemented
+
+- [x] REST API with HTTP endpoints
+- [x] WiFi Access Point (AP) mode with captive portal
+- [x] WiFi Station (STA) mode with auto-connect
+- [x] JSON configuration files
+- [x] Persistent NVS storage (credentials & settings)
+- [x] System uptime tracking
+- [x] API key authentication (X-API-Key header)
+- [x] NTP time synchronization
+- [x] Log streaming via web UI
+- [x] Xiaomi remote ID scanning & storage
+- [x] Xiaomi power on/off control
+
+### Planned
+
+- [ ] Additional light commands (color, brightness, effects)
+- [ ] Web interface improvements
+
+---
+
+## Technical details
+
+### Data whitening algorithm
+
+The nRF24 module uses **whitening** to ensure reliable radio communication:
+
+**Why is it important?**
+
+- **Clock recovery:** Ensures receiver stays synchronized
+- **DC balancing:** Prevents frequency offset
+- **Signal quality:** Reduces electromagnetic interference
+
+**How it works:**
+
+1. **LFSR (Linear Feedback Shift Register)** generates pseudo-random bits
+2. **XOR operation** scrambles the payload with the random sequence
+3. **Receiver applies** the same algorithm with the same seed to recover data
+
+**Implementation in this project:**
+
+The whitening is applied in [`nrf24_build_xiaomi_frame`](main/nrf24/nrf24.c#L298) as the final step before transmission, scrambling the entire 18-byte frame while maintaining protocol integrity
+
+---
+
+## License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details
+
+---
+
+## Support
+
+- Check the [Swagger API documentation](./swagger.yml) for endpoint details
+- Found a bug? [Open an issue](https://github.com/Times-Z/light-bar-2-api/issues)
+- Have questions? [Start a discussion](https://github.com/Times-Z/light-bar-2-api/discussions)
+
+---
+
+<div align="center">
+
+**Made with ❤️**
+
+[Star us on GitHub](https://github.com/Times-Z/light-bar-2-api) if you find this project useful!
+
+</div>
