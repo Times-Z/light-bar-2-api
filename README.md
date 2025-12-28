@@ -85,29 +85,32 @@ cd light-bar-2-api
 - Open VS Code and install the ESP-IDF extension
 - Follow the setup instructions to configure the ESP32 environment
 
-### 3. Configure all you need in the config dir
+### 3. Configure the project
 
-Configure the json with your SSID, password, api keys etc...
+Two configuration methods are available:
 
-```sh
-cp main/config/default.json main/config/config.json
-```
+**1) Using a JSON file (first boot-time only)**
+
+- Copy the template: `cp main/config/default.json main/config/config.json`
+- Fill in `main/config/config.json` with:
+  - `wifi_ssid` and `wifi_password`
+  - `api_key`
+  - `ntp_server`
+  - `xiaomi_remote_id` if already known
+- If the file exists and the Wi-Fi credentials are valid, the ESP32 will connect, store the config in NVS, and will not read the file again (used only at init)
+
+**2) Using the Web UI or the API**
+
+- All routes are described in the swagger (`swagger.yml`).
+- Configuration entered via the UI/API is persisted directly in NVS if valid
+
+If Wi-Fi is not set in `config.json`, or the configured network is unreachable/invalid, the ESP32 falls back to AP mode and creates the access point `Lightbar2api` with password `$tr0ngWifi`, exposing a captive portal so setup works on iPhone/Android as well
 
 ### 4. Build and flash the firmware
 
 ```sh
 idf.py build
 idf.py flash
-```
-
-## Usage
-
-1. Power on the ESP32
-2. The device will create an access point `Lightbar2api` with password `$tr0ngWifi` to configure the Wi-Fi network (default behavior if the application is not properly configured via `config.json` or the wifi configured insn't available)
-3. Use the serial monitor for debugging:
-
-```sh
-idf.py monitor
 ```
 
 ## API Documentation
