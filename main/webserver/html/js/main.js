@@ -14,6 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const nrf24Output = document.getElementById("nrf24-output");
   const nrf24Loader = document.getElementById("nrf24-loader");
   const nrf24ScanBtn = document.getElementById("nrf24-scan-btn");
+  const powerOutput = document.getElementById("power-output");
+  const powerLoader = document.getElementById("power-loader");
+  const powerToggleBtn = document.getElementById("power-toggle-btn");
 
   const showLoader = (loader) => {
     loader.style.display = "block";
@@ -261,4 +264,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
   nrf24ScanBtn.dataset.originalText = nrf24ScanBtn.innerText;
   nrf24ScanBtn.onclick = handleNrf24Scan;
+
+  // Power Toggle functionality
+  const formatPowerToggle = (data) => {
+    if (!data.success) {
+      return `<p style="color: var(--error-color);">Failed to toggle power: ${
+        data.message || "Unknown error"
+      }</p>`;
+    }
+
+    return `
+      <div style="padding: 15px; background: var(--container-bg); border: 2px solid var(--success-color); border-radius: 8px; margin-top: 10px;">
+        <p style="color: var(--success-color); margin: 0;">✓ Power toggle command sent successfully!</p>
+        <ul style="margin-top: 10px; font-size: 14px;">
+          <li><strong>Remote ID:</strong> ${data.xiaomi_remote_id || "N/A"}</li>
+          <li><strong>Command:</strong> ${data.command || "power_toggle"}</li>
+          <li><strong>Status:</strong> ${data.status || "OK"}</li>
+        </ul>
+      </div>
+    `;
+  };
+
+  const handlePowerToggle = () => {
+    disableButton(powerToggleBtn);
+    showLoader(powerLoader);
+    powerOutput.innerHTML = "";
+
+    fetch("/api/v1/xiaomi/power/toogle", {
+      method: "POST",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data || data.success === false) {
+          throw new Error(data.message || "Unknown error");
+        }
+        showOutput(powerOutput, formatPowerToggle(data), powerLoader);
+      })
+      .catch((err) => {
+        showOutput(
+          powerOutput,
+          `<p style="color: var(--error-color);">${err.message}</p>`,
+          powerLoader
+        );
+      })
+      .finally(() => {
+        hideLoader(powerLoader);
+        enableButton(powerToggleBtn, "Toggle Power");
+      });
+  };
+
+  powerToggleBtn.dataset.originalText = powerToggleBtn.innerText;
+  powerToggleBtn.onclick = handlePowerToggle;
 });
