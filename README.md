@@ -17,9 +17,10 @@
 
 <table>
   <tr>
-    <td><img height="350" src="./.github/assets/01_login.gif" alt="Login Interface" /></td>
-    <td><img height="350" src="./.github/assets/02_website.png" alt="Web Dashboard" /></td>
-    <td><img height="350" src="./.github/assets/03_logs.png" alt="Live Logs" /></td>
+    <td><img src="./.github/assets/01_login.gif" alt="Login Interface" /></td>
+    <td><img src="./.github/assets/02_website.png" alt="Web Dashboard" /></td>
+    <td><img src="./.github/assets/03_logs.png" alt="Live Logs" /></td>
+    <td><img src="./.github/assets/04_irl.jpg" alt="Irl pict" /></td>
   </tr>
 </table>
 
