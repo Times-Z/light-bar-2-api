@@ -95,6 +95,8 @@ paths:
         - V1
       summary: Scan Wi-Fi networks
       description: Performs a scan of available Wi-Fi networks nearby.
+      security:
+        - ApiKeyAuth: []
       responses:
         "200":
           description: List of available networks
@@ -281,6 +283,8 @@ paths:
         - V1
       summary: Scan for Xiaomi remote control
       description: Performs a scan to detect and decode the Xiaomi remote control ID from NRF24 radio packets. The scan listens on multiple 2.4 GHz channels and classifies received commands (on/off, cooler, warmer, higher, lower, reset).
+      security:
+        - ApiKeyAuth: []
       parameters:
         - name: duration
           in: query
