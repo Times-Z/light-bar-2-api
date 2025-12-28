@@ -23,6 +23,8 @@ spiffs_create_partition_image(www webserver/html FLASH_IN_PROJECT)
 
 set(CONFIG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/config)
 file(GLOB CONFIG_JSON_FILES "${CONFIG_DIR}/*.json")
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CONFIG_DIR}/*.json")
 if(CONFIG_JSON_FILES)
     set(TEMP_CONFIG_DIR ${CMAKE_BINARY_DIR}/temp_config)
     file(MAKE_DIRECTORY ${TEMP_CONFIG_DIR})

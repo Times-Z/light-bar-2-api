@@ -1,10 +1,11 @@
 #include <time_sync.h>
+#include "config_loader.h"
 
-static const char *TAG = "TIME_SYNC";
+static const char* TAG = "TIME_SYNC";
 static int NTP_SYNC_TIMEOUT = 30;
 static bool s_time_synced = false;
 
-static void ntp_sync_notification_cb(struct timeval *tv) {
+static void ntp_sync_notification_cb(struct timeval* tv) {
     s_time_synced = true;
     ESP_LOGI(TAG, "NTP sync callback fired");
 }
@@ -25,7 +26,21 @@ void time_init(void) {
             ESP_LOGW(TAG, "Failed to sync with NTP, using build time fallback");
         }
     } else {
-        ESP_LOGI(TAG, "No NTP server configured, using build time fallback");
+        ESP_LOGI(TAG, "No NTP server configured in NVS");
+    }
+
+    char config_ntp_domain[33] = {0};
+    if (config_load_ntp_server(config_ntp_domain, sizeof(config_ntp_domain)) && strlen(config_ntp_domain) > 0) {
+        ESP_LOGI(TAG, "Using NTP server from config.json: %s", config_ntp_domain);
+
+        if (time_sync_with_ntp(config_ntp_domain)) {
+            ESP_LOGI(TAG, "Time sync with config NTP server successful");
+            return;
+        } else {
+            ESP_LOGW(TAG, "Failed to sync with config NTP, using build time fallback");
+        }
+    } else {
+        ESP_LOGI(TAG, "No NTP server configured in config.json");
     }
 
     time_sync_from_build();
@@ -42,7 +57,7 @@ void time_sync_from_build(void) {
     sscanf(__TIME__, "%d:%d:%d", &hour, &minute, &second);
 
     int month_num = 0;
-    const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     for (int i = 0; i < 12; i++) {
         if (strcmp(month, months[i]) == 0) {
             month_num = i;
@@ -79,7 +94,7 @@ void time_sync_from_build(void) {
 /// @brief sync time with ntp server
 /// @param char ntp_domain the ntp domain
 /// @return bool true if change is ok, false otherwise
-bool time_sync_with_ntp(const char *ntp_domain) {
+bool time_sync_with_ntp(const char* ntp_domain) {
     if (ntp_domain == NULL || strlen(ntp_domain) == 0) {
         ESP_LOGE(TAG, "NTP domain is empty or NULL.");
         return false;
